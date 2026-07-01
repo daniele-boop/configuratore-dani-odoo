@@ -3,21 +3,203 @@
   "products": [
     {
       "id": "p_std",
-      "name": "NSELED — Serie standard",
+      "name": "OSO Outdoor Sign ",
       "modW": 320,
       "modH": 160,
       "resolutions": [
-        { "id": "s25", "label": "P2.5", "pitch": 2.5 },
-        { "id": "s39", "label": "P3.9", "pitch": 3.9 },
-        { "id": "s4", "label": "P4", "pitch": 4 }
+        {
+          "id": "r_jhpf0wq",
+          "label": "P4",
+          "pitch": 4
+        },
+        {
+          "id": "r_tm48pzp",
+          "label": "P3",
+          "pitch": 3
+        },
+        {
+          "id": "r_tsay504",
+          "label": "P2.5",
+          "pitch": 2.5
+        }
       ],
       "cabinets": [
-        { "w": 640, "h": 320, "modQty": 4, "prices": {} },
-        { "w": 640, "h": 480, "modQty": 6, "prices": {} },
-        { "w": 640, "h": 640, "modQty": 8, "prices": {} },
-        { "w": 960, "h": 320, "modQty": 6, "prices": {} },
-        { "w": 960, "h": 480, "modQty": 9, "prices": {} },
-        { "w": 960, "h": 640, "modQty": 12, "prices": {} }
+        {
+          "w": 640,
+          "h": 320,
+          "weight": 5,
+          "power": 50,
+          "price": 591,
+          "prices": {
+            "r_jhpf0wq": 591,
+            "r_tm48pzp": 742,
+            "r_tsay504": 980
+          },
+          "modQty": 4,
+          "codes": {
+            "r_jhpf0wq": "OSO406432",
+            "r_tm48pzp": "OSO306432",
+            "r_tsay504": "OSO256432"
+          }
+        },
+        {
+          "w": 640,
+          "h": 480,
+          "weight": 7,
+          "power": 75,
+          "price": 727,
+          "prices": {
+            "r_tm48pzp": 955,
+            "r_tsay504": 1312,
+            "r_jhpf0wq": 727
+          },
+          "modQty": 6,
+          "codes": {
+            "r_jhpf0wq": "OSO406448",
+            "r_tm48pzp": "OSO306448",
+            "r_tsay504": "OSO256448"
+          }
+        },
+        {
+          "w": 640,
+          "h": 640,
+          "weight": 9,
+          "power": 100,
+          "price": 969,
+          "prices": {
+            "r_jhpf0wq": 969,
+            "r_tm48pzp": 1274,
+            "r_tsay504": 1750
+          },
+          "modQty": 8,
+          "codes": {
+            "r_jhpf0wq": "OSO406464",
+            "r_tm48pzp": "OSO306464",
+            "r_tsay504": "OSO256464"
+          }
+        },
+        {
+          "w": 960,
+          "h": 320,
+          "weight": 7,
+          "power": 75,
+          "price": 886,
+          "prices": {
+            "r_tsay504": 1470,
+            "r_tm48pzp": 1242,
+            "r_jhpf0wq": 866
+          },
+          "modQty": 6,
+          "codes": {
+            "r_jhpf0wq": "OSO409632",
+            "r_tm48pzp": "OSO309632",
+            "r_tsay504": "OSO309632"
+          }
+        },
+        {
+          "w": 960,
+          "h": 480,
+          "weight": 10,
+          "power": 110,
+          "price": 1071,
+          "prices": {
+            "r_jhpf0wq": 1071,
+            "r_tm48pzp": 1584,
+            "r_tsay504": 1946
+          },
+          "modQty": 9,
+          "codes": {
+            "r_jhpf0wq": "OSO409648",
+            "r_tm48pzp": "OSO309648",
+            "r_tsay504": "OSO259648"
+          }
+        },
+        {
+          "w": 960,
+          "h": 640,
+          "weight": 14,
+          "power": 150,
+          "price": 1541,
+          "prices": {
+            "r_jhpf0wq": 1421,
+            "r_tm48pzp": 1967,
+            "r_tsay504": 2674
+          },
+          "modQty": 12,
+          "codes": {
+            "r_jhpf0wq": "OSO409664",
+            "r_tm48pzp": "OSO309664",
+            "r_tsay504": "OSO259664"
+          }
+        }
+      ]
+    },
+    {
+      "id": "p_500",
+      "name": "Indoor Serie 500",
+      "resolutions": [],
+      "cabinets": [
+        {
+          "w": 500,
+          "h": 500
+        },
+        {
+          "w": 1000,
+          "h": 250
+        },
+        {
+          "w": 1000,
+          "h": 500
+        },
+        {
+          "w": 500,
+          "h": 250
+        }
+      ]
+    },
+    {
+      "id": "p_mr1y5wd7",
+      "name": "Indoor Serie 640",
+      "resolutions": [],
+      "cabinets": [
+        {
+          "w": 640,
+          "h": 480
+        },
+        {
+          "w": 640,
+          "h": 640
+        },
+        {
+          "w": 960,
+          "h": 480
+        },
+        {
+          "w": 320,
+          "h": 640
+        }
+      ]
+    },
+    {
+      "id": "p_mr1y7062",
+      "name": "OTV. seri  960 6.67",
+      "resolutions": [],
+      "cabinets": [
+        {
+          "w": 960,
+          "h": 960
+        }
+      ]
+    },
+    {
+      "id": "p_mr1y7h9t",
+      "name": "Transparent",
+      "resolutions": [],
+      "cabinets": [
+        {
+          "w": 1000,
+          "h": 500
+        }
       ]
     }
   ]
