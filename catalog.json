@@ -1,0 +1,24 @@
+{
+  "password": "nseled2026",
+  "products": [
+    {
+      "id": "p_std",
+      "name": "NSELED — Serie standard",
+      "modW": 320,
+      "modH": 160,
+      "resolutions": [
+        { "id": "s25", "label": "P2.5", "pitch": 2.5 },
+        { "id": "s39", "label": "P3.9", "pitch": 3.9 },
+        { "id": "s4", "label": "P4", "pitch": 4 }
+      ],
+      "cabinets": [
+        { "w": 640, "h": 320, "modQty": 4, "prices": {} },
+        { "w": 640, "h": 480, "modQty": 6, "prices": {} },
+        { "w": 640, "h": 640, "modQty": 8, "prices": {} },
+        { "w": 960, "h": 320, "modQty": 6, "prices": {} },
+        { "w": 960, "h": 480, "modQty": 9, "prices": {} },
+        { "w": 960, "h": 640, "modQty": 12, "prices": {} }
+      ]
+    }
+  ]
+}
