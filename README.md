@@ -1,0 +1,1 @@
+# configuratore-dani-odoo
