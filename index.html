@@ -256,6 +256,37 @@
   .odoostatus a{color:#37c3d1}
   .odoostatus.ok{color:var(--ok)} .odoostatus.err{color:var(--danger)} .odoostatus.wait{color:var(--muted)}
 
+  .ctrlhint{font-family:var(--mono);font-size:12px;color:var(--ink);margin-bottom:12px}
+  .ctrlhint.muted{color:var(--muted-2)}
+  .ctrlhint b{color:#37c3d1}
+  .ctrlsub{font-family:var(--mono);font-size:10.5px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin:12px 0 7px}
+  .ctrlsub.muted{color:var(--muted-2)}
+  .ctrlrow{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px;background:var(--panel-2)}
+  .ctrlrow.sel{border-color:#2f8f9a;background:rgba(55,195,209,.07)}
+  .ctrlrow.ko{opacity:.6}
+  .ctrlpick{flex:0 0 auto;padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--ink);font-family:var(--mono);font-size:11.5px;cursor:pointer;white-space:nowrap;transition:.15s}
+  .ctrlpick:hover{border-color:#37c3d1}
+  .ctrlpick.on{background:#2f8f9a;border-color:#2f8f9a;color:#fff}
+  .ctrlinfo{flex:1;min-width:0}
+  .ctrlname{font-weight:600;font-size:13.5px}
+  .ctrlcap{font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:2px}
+  .ctrlwarn{font-family:var(--mono);font-size:10px;color:var(--danger);border:1px solid var(--danger);border-radius:5px;padding:1px 5px;margin-left:6px;font-weight:400}
+  .ctrlright{display:flex;align-items:center;gap:10px;flex:0 0 auto}
+  .ctrlqty{width:56px;padding:6px 8px;font-size:12.5px;text-align:center}
+  .ctrlprice{font-family:var(--mono);font-size:12.5px;color:var(--ink)}
+  .ctrlnone{font-family:var(--mono);font-size:12px;color:var(--muted);padding:6px 0}
+
+  .cadmrow{display:grid;grid-template-columns:1.2fr .9fr .8fr .8fr .6fr .9fr .5fr .8fr 1fr auto;gap:7px;align-items:center;padding:9px;border:1px solid var(--line);border-radius:9px;margin-bottom:7px;background:var(--panel-2)}
+  .cadmrow input{padding:7px 8px;font-size:12px}
+  .cadmrow .rm{flex:0 0 auto}
+  .cadd-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}
+  .cadd-grid label{font-family:var(--mono);font-size:10px;color:var(--muted-2);display:block;margin-bottom:3px;text-transform:uppercase;letter-spacing:.5px}
+  .cadd-grid input{padding:8px;font-size:12.5px;width:100%}
+  .ctrladd{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+  .add-title{font-family:var(--mono);font-size:11px;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);margin-bottom:9px}
+  .cadmhead{font-family:var(--mono);font-size:10px;letter-spacing:.5px;text-transform:uppercase;color:var(--muted-2);display:grid;grid-template-columns:1.2fr .9fr .8fr .8fr .6fr .9fr .5fr .8fr 1fr auto;gap:7px;padding:0 9px 4px}
+  @media(max-width:760px){ .cadmrow,.cadmhead{grid-template-columns:1fr 1fr 1fr;}.cadmhead{display:none} }
+
   .adminsec{border-top:1px solid var(--line);margin-top:22px;padding-top:20px}
   .adminsec h3{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted-2);margin:0 0 14px}
   .rowbtns{display:flex;gap:10px;flex-wrap:wrap}
@@ -365,6 +396,13 @@
           <div class="box price"><div class="k">Prezzo totale</div><div class="v" id="tPrice">—</div><div class="partial" id="pPrice" hidden>dati parziali</div></div>
         </div>
       </section>
+
+      <section class="card" id="ctrlCard" hidden>
+        <p class="eyebrow">Controller consigliati</p>
+        <div id="ctrlHint" class="ctrlhint"></div>
+        <div id="ctrlList"></div>
+        <div class="strategy">Compatibilità sui pixel della parete: il controller deve reggere pixel totali, base e altezza. Seleziona quelli da includere nel preventivo.</div>
+      </section>
     </div>
   </div>
 
@@ -398,6 +436,30 @@
       </div>
 
       <div class="adminsec">
+        <h3>Controller</h3>
+        <p class="sub" style="margin:0 0 12px">Controller/processori per pilotare le pareti. Il configuratore propone quelli compatibili con i pixel della parete. Prezzo e <b>codice Odoo</b> (Riferimento interno) servono per il preventivo.</p>
+        <div id="ctrlAdminList"></div>
+        <div class="ctrladd">
+          <div class="add-title">+ Aggiungi controller</div>
+          <div class="cadd-grid">
+            <div><label>Modello</label><input id="c-mod" placeholder="es. HD-A9"></div>
+            <div><label>Max px totali</label><input type="number" id="c-tot" placeholder="2600000"></div>
+            <div><label>Max px base</label><input type="number" id="c-base" placeholder="16384"></div>
+            <div><label>Max px alt.</label><input type="number" id="c-ht" placeholder="4096"></div>
+            <div><label>Porte</label><input type="number" id="c-ports" placeholder="4"></div>
+            <div><label>Max res/porta</label><input type="number" id="c-rp" placeholder="655350"></div>
+            <div><label>4K</label><input id="c-k4" placeholder="SI"></div>
+            <div><label>Prezzo €</label><input type="number" id="c-price" placeholder="—"></div>
+            <div><label>Codice Odoo</label><input id="c-code" placeholder="—"></div>
+          </div>
+          <div class="rowbtns" style="margin-top:10px">
+            <button class="btn ghost sm" id="addCtrl">Aggiungi controller</button>
+            <button class="btn ghost sm" id="seedHuidu">Aggiungi modelli Huidu</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="adminsec">
         <h3>Sicurezza</h3>
         <div class="rowbtns">
           <input id="newPw" type="password" placeholder="Nuova password" style="flex:1;min-width:180px">
@@ -408,12 +470,14 @@
 
       <div class="adminsec">
         <h3>Pubblicazione catalogo</h3>
-        <p class="sub" style="margin:0 0 12px">Per rendere il catalogo uguale per tutti sul sito: esporta il file <b>catalog.json</b> e caricalo nella cartella principale del sito su Netlify. Alla riapertura del link tutti vedranno questo catalogo.</p>
+        <p class="sub" style="margin:0 0 12px"><b>Salva sul sito</b> rende subito attive per tutti le modifiche, senza passare da GitHub (richiede il token impostato su Netlify). In alternativa puoi esportare <b>catalog.json</b> e caricarlo manualmente.</p>
         <div class="rowbtns">
-          <button class="btn primary sm" id="exportBtn">Esporta catalog.json</button>
+          <button class="btn primary sm" id="cloudSaveBtn">Salva sul sito (tutti)</button>
+          <button class="btn ghost sm" id="exportBtn">Esporta catalog.json</button>
           <button class="btn ghost sm" id="importBtn">Importa JSON</button>
           <input type="file" id="importFile" accept="application/json">
         </div>
+        <div class="odoostatus" id="cloudSaveMsg"></div>
       </div>
 
       <div class="adminsec" style="display:flex;justify-content:flex-end;gap:10px">
@@ -445,8 +509,17 @@
         {w:500,h:500,weight:8,power:130,modQty:4,prices:{r19:260,r25:210},codes:{r19:"OSO-500-P19",r25:"OSO-500-P25"}},
         {w:500,h:250,weight:4,power:65,modQty:2,prices:{r19:150,r25:120},codes:{r19:"OSO-250-P19",r25:"OSO-250-P25"}}
       ]}
+    ],
+    controllers: [
+      { id:"hd_a3l", model:"HD-A3L", maxTotal:655350,  maxBase:8192,  maxHeight:2560, ports:1, maxResPort:655350, k4:"SI" },
+      { id:"hd_a4l", model:"HD-A4L", maxTotal:655350,  maxBase:16384, maxHeight:4096, ports:2, maxResPort:655350, k4:"SI" },
+      { id:"hd_a5l", model:"HD-A5L", maxTotal:1300000, maxBase:16384, maxHeight:4096, ports:2, maxResPort:655350, k4:"SI" },
+      { id:"hd_a6l", model:"HD-A6L", maxTotal:2600000, maxBase:16384, maxHeight:4096, ports:4, maxResPort:576000, k4:"SI" },
+      { id:"hd_a7",  model:"HD-A7",  maxTotal:5160000, maxBase:15360, maxHeight:4096, ports:8, maxResPort:655350, k4:"-" },
+      { id:"hd_a8",  model:"HD-A8",  maxTotal:8294400, maxBase:16384, maxHeight:4096, ports:8, maxResPort:655350, k4:"-" }
     ]
   };
+  const HUIDU_SEED = JSON.parse(JSON.stringify(DEFAULTS.controllers));
 
   const rid=()=>"r_"+Math.random().toString(36).slice(2,9);
   let DB;
@@ -460,6 +533,8 @@
       (p.cabinets||[]).forEach(c=>{ delete c.modW; delete c.modH; });
       (p.resolutions||[]).forEach(r=>{ if(!r.id) r.id=rid(); });
     });
+    if(!Array.isArray(DB.controllers)) DB.controllers=[];
+    DB.controllers.forEach(c=>{ if(!c.id) c.id="c_"+Math.random().toString(36).slice(2,9); });
   }
   function load(){ try{ const raw=localStorage.getItem(STORE_KEY); if(raw){ DB=JSON.parse(raw); migrate(); return; } }catch(e){} DB=JSON.parse(JSON.stringify(DEFAULTS)); migrate(); }
   function save(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(DB)); }catch(e){} }
@@ -468,6 +543,21 @@
   let catalogSource="local";  // "site" quando caricato da catalog.json
   function normPrices(pr){ if(!pr||typeof pr!=="object") return undefined; const o={}; Object.keys(pr).forEach(k=>{ if(pr[k]>0) o[k]=pr[k]; }); return Object.keys(o).length?o:undefined; }
   function normCodes(cd){ if(!cd||typeof cd!=="object") return undefined; const o={}; Object.keys(cd).forEach(k=>{ if(typeof cd[k]==="string"&&cd[k].trim()) o[k]=cd[k].trim(); }); return Object.keys(o).length?o:undefined; }
+  function normControllers(arr){
+    if(!Array.isArray(arr)) return [];
+    return arr.filter(c=>c&&(c.model||c.name)).map(c=>({
+      id: c.id || ("c_"+Math.random().toString(36).slice(2,9)),
+      model: String(c.model||c.name||"Controller"),
+      maxTotal: (+c.maxTotal||+c.total||0),
+      maxBase: (+c.maxBase||+c.base||0),
+      maxHeight: (+c.maxHeight||+c.height||0),
+      ports: (+c.ports>0?+c.ports:undefined),
+      maxResPort: (+c.maxResPort>0?+c.maxResPort:(+c.resPort>0?+c.resPort:undefined)),
+      k4: (typeof c.k4==="string"&&c.k4.trim()?c.k4.trim():undefined),
+      price: (+c.price>0?+c.price:undefined),
+      code: (typeof c.code==="string"&&c.code.trim()?c.code.trim():undefined)
+    }));
+  }
   function normalizeDB(j){
     return {
       password: (typeof j.password==="string" && j.password) ? j.password : DEFAULTS.password,
@@ -488,12 +578,13 @@
             modQty:(c.modQty>0?c.modQty:undefined),color:(typeof c.color==="string"?c.color:undefined)
           }))
         };
-      })
+      }),
+      controllers: normControllers(j.controllers)
     };
   }
 
   // stato: le selezioni sono COMPOSIZIONI {total, counts}
-  const S = { productId:null, reqW:null, reqH:null, selWc:null, selHc:null, pitch:0, showModules:true };
+  const S = { productId:null, reqW:null, reqH:null, selWc:null, selHc:null, pitch:0, showModules:true, selCtrls:{} };
   const R169 = 16/9;
 
   const HUES=[265,190,330,150,95,300,45,220];  // famiglia colore per larghezza
@@ -572,6 +663,15 @@
     return product.cabinets.some(c=> c.price>0 || (c.prices && Object.values(c.prices).some(v=>v>0)) );
   }
   const ODOO_ENDPOINT="/.netlify/functions/odoo-quote";
+  function ctrlFits(c,px){
+    if(!px) return false;
+    const tot=px.base*px.h;
+    return (!c.maxTotal || tot<=c.maxTotal) && (!c.maxBase || px.base<=c.maxBase) && (!c.maxHeight || px.h<=c.maxHeight);
+  }
+  function currentPx(){
+    if(!(S.pitch>0)||!S.selWc||!S.selHc) return null;
+    return { base:Math.round(S.selWc.total/S.pitch), h:Math.round(S.selHc.total/S.pitch) };
+  }
   function buildOffer(){
     const p=currentProduct(); if(!p||!S.selWc||!S.selHc) return null;
     const cols=expand(S.selWc.counts), rows=expand(S.selHc.counts);
@@ -583,11 +683,20 @@
       const cab=findCab(p,w,h); const price=cab?priceOf(cab):0; const code=cab?codeOf(cab):"";
       if(!(price>0)) priceOk=false; if(!code) codeOk=false;
       totalPrice+=qty*price; totalCab+=qty;
-      lines.push({code,label:w+"×"+h,w,h,qty,price_unit:Number((price||0).toFixed(2))});
+      lines.push({code,label:w+"×"+h,w,h,qty,price_unit:Number((price||0).toFixed(2)),kind:"cabinet"});
     }));
+    const controllers=[];
+    Object.keys(S.selCtrls||{}).forEach(id=>{
+      const qty=S.selCtrls[id]; if(!(qty>0)) return;
+      const ctrl=(DB.controllers||[]).find(c=>c.id===id); if(!ctrl) return;
+      const code=ctrl.code||""; if(!code) codeOk=false;
+      const price=ctrl.price||0; if(price>0) totalPrice+=qty*price;
+      const line={code,label:"Controller "+ctrl.model,qty,price_unit:Number((price||0).toFixed(2)),kind:"controller"};
+      lines.push(line); controllers.push(line);
+    });
     return { product:p.name, resolution:S.res?{label:S.res.label,pitch:S.res.pitch}:null,
       size:{w:S.selWc.total,h:S.selHc.total},
-      lines, totals:{cabinets:totalCab,price:Number(totalPrice.toFixed(2))},
+      lines, controllers, totals:{cabinets:totalCab,price:Number(totalPrice.toFixed(2))},
       complete:{price:priceOk,code:codeOk}, generated_at:new Date().toISOString() };
   }
   function setOdoo(cls,html){ const el=$("odooStatus"); if(!el) return; el.className="odoostatus "+cls; el.innerHTML=html; }
@@ -637,7 +746,7 @@
 
     const p=currentProduct();
     const has = p && p.cabinets.length && S.reqW!==null && S.reqH!==null;
-    ["resultCard","bomCard","metrics","specCard","altCard"].forEach(id=>$(id).hidden=!has);
+    ["resultCard","bomCard","metrics","specCard","altCard","ctrlCard"].forEach(id=>$(id).hidden=!has);
     const hasMod = p && p.modW>0 && p.modH>0;
     $("modToggle").hidden = !(has && hasMod);
     if(has && hasMod){ $("modToggle").setAttribute("aria-pressed", S.showModules?"true":"false"); $("modToggle").textContent = "Moduli: "+(S.showModules?"on":"off"); }
@@ -668,6 +777,78 @@
     renderMetrics(p,cols,rows,totalW,totalH);
     renderRatioSuggest(eW,eH,totalW,totalH);
     renderAltWalls(p,eW,eH,S.reqW,S.reqH);
+    renderControllers();
+  }
+
+  function renderControllers(){
+    const card=$("ctrlCard"), hint=$("ctrlHint"), host=$("ctrlList");
+    const ctrls=(DB.controllers||[]);
+    if(!ctrls.length){ card.hidden=true; return; }
+    card.hidden=false; host.innerHTML="";
+    const px=currentPx();
+    if(!px){
+      hint.className="ctrlhint muted";
+      hint.textContent="Seleziona una risoluzione per calcolare i controller compatibili con questa parete.";
+      // mostra comunque eventuali selezionati
+    } else {
+      hint.className="ctrlhint";
+      hint.innerHTML="Parete: <b>"+fmt(px.base)+"×"+fmt(px.h)+"</b> px · <b>"+fmt(px.base*px.h)+"</b> px totali";
+    }
+    // ordina: compatibili (dal più piccolo che regge) poi non compatibili
+    const withFit=ctrls.map(c=>({c,fit:ctrlFits(c,px)}));
+    const okList=withFit.filter(x=>x.fit).sort((a,b)=>(a.c.maxTotal||0)-(b.c.maxTotal||0));
+    const koList=withFit.filter(x=>!x.fit).sort((a,b)=>(a.c.maxTotal||0)-(b.c.maxTotal||0));
+
+    const capTxt=c=>{
+      const bits=[];
+      if(c.maxTotal) bits.push(fmt(c.maxTotal)+" px");
+      if(c.maxBase&&c.maxHeight) bits.push(fmt(c.maxBase)+"×"+fmt(c.maxHeight));
+      if(c.ports) bits.push(c.ports+" porte");
+      if(c.k4&&c.k4!=="-") bits.push("4K "+c.k4);
+      return bits.join(" · ");
+    };
+    const mkRow=(c,fit)=>{
+      const sel=S.selCtrls[c.id]>0;
+      const row=document.createElement("div");
+      row.className="ctrlrow"+(fit?"":" ko")+(sel?" sel":"");
+      const cb=document.createElement("button");
+      cb.className="ctrlpick"+(sel?" on":"");
+      cb.textContent=sel?"✓ Nel preventivo":"+ Aggiungi";
+      cb.addEventListener("click",()=>{ if(S.selCtrls[c.id]>0) delete S.selCtrls[c.id]; else S.selCtrls[c.id]=1; renderControllers(); });
+      const info=document.createElement("div");info.className="ctrlinfo";
+      const codeWarn=(!c.code)?' <span class="ctrlwarn">manca codice Odoo</span>':'';
+      const priceTxt=c.price>0?'<span class="ctrlprice">'+eur(c.price)+'</span>':'';
+      info.innerHTML='<div class="ctrlname">'+c.model+(px&&!fit?' <span class="ctrlwarn">non compatibile</span>':'')+codeWarn+'</div>'+
+                     '<div class="ctrlcap">'+capTxt(c)+'</div>';
+      const right=document.createElement("div");right.className="ctrlright";
+      if(sel){
+        const q=document.createElement("input");q.type="number";q.min="1";q.step="1";q.className="ctrlqty";q.value=S.selCtrls[c.id];
+        q.addEventListener("input",()=>{ const v=Math.max(1,parseInt(q.value,10)||1); S.selCtrls[c.id]=v; });
+        right.appendChild(q);
+      }
+      if(priceTxt){ const pr=document.createElement("div");pr.innerHTML=priceTxt;right.appendChild(pr); }
+      row.appendChild(cb);row.appendChild(info);row.appendChild(right);
+      return row;
+    };
+
+    if(px && okList.length){
+      const h=document.createElement("div");h.className="ctrlsub";h.textContent="Compatibili";host.appendChild(h);
+      okList.forEach(x=>host.appendChild(mkRow(x.c,true)));
+    } else if(px){
+      const none=document.createElement("div");none.className="ctrlnone";
+      none.textContent="Nessun controller singolo regge questa parete. Riduci la misura, cambia risoluzione, oppure valuta più controller in parallelo.";
+      host.appendChild(none);
+    }
+    // selezionati non compatibili (restano nel preventivo con avviso) + elenco non compatibili in coda
+    const koToShow = koList.filter(x=> S.selCtrls[x.c.id]>0 || px);
+    if(px && koToShow.length){
+      const h=document.createElement("div");h.className="ctrlsub muted";h.textContent="Non compatibili";host.appendChild(h);
+      koToShow.forEach(x=>host.appendChild(mkRow(x.c,false)));
+    }
+    if(!px){
+      // senza risoluzione: mostra tutti come lista neutra, con eventuali selezionati evidenziati
+      ctrls.forEach(c=>host.appendChild(mkRow(c,true)));
+    }
   }
 
   function renderChips(kind,elId,req,selTotal,reach,eng){
@@ -915,9 +1096,9 @@
   $("closeAdmin").addEventListener("click",closeAdmin);
   overlay.addEventListener("click",e=>{ if(e.target===overlay) closeAdmin(); });
 
-  let draft=null;
+  let draft=null; let draftControllers=null;
   function tryEnter(){
-    if($("pwInput").value===DB.password){ draft=JSON.parse(JSON.stringify(DB.products)); $("lockView").classList.add("hidden"); $("panelView").classList.remove("hidden"); renderProdList(); }
+    if($("pwInput").value===DB.password){ draft=JSON.parse(JSON.stringify(DB.products)); draftControllers=JSON.parse(JSON.stringify(DB.controllers||[])); $("lockView").classList.add("hidden"); $("panelView").classList.remove("hidden"); renderProdList(); renderCtrlAdmin(); }
     else { $("pwErr").textContent="Password errata."; }
   }
   $("pwEnter").addEventListener("click",tryEnter);
@@ -1055,11 +1236,55 @@
     });
   }
 
+  function renderCtrlAdmin(){
+    const host=$("ctrlAdminList"); if(!host) return; host.innerHTML="";
+    if(!Array.isArray(draftControllers)) draftControllers=[];
+    if(!draftControllers.length){
+      const e=document.createElement("div");e.className="resempty";e.textContent="Nessun controller — aggiungine uno qui sotto oppure carica i modelli Huidu.";host.appendChild(e);
+    } else {
+      const head=document.createElement("div");head.className="cadmhead";
+      head.innerHTML="<span>Modello</span><span>Max px tot.</span><span>Max base</span><span>Max alt.</span><span>Porte</span><span>Res/porta</span><span>4K</span><span>Prezzo</span><span>Cod. Odoo</span><span></span>";
+      host.appendChild(head);
+    }
+    const num=(obj,key,ph)=>{ const i=document.createElement("input");i.type="number";i.min="0";i.step="any";i.placeholder=ph||"";if(obj[key]>0)i.value=obj[key];i.addEventListener("input",()=>obj[key]=numOrUndef(i.value));return i; };
+    const txt=(obj,key,ph)=>{ const i=document.createElement("input");i.type="text";i.placeholder=ph||"";if(obj[key])i.value=obj[key];i.addEventListener("input",()=>obj[key]=(i.value.trim()||undefined));return i; };
+    draftControllers.forEach((c,ci)=>{
+      const row=document.createElement("div");row.className="cadmrow";
+      row.appendChild(txt(c,"model","Modello"));
+      row.appendChild(num(c,"maxTotal","px tot"));
+      row.appendChild(num(c,"maxBase","base"));
+      row.appendChild(num(c,"maxHeight","alt"));
+      row.appendChild(num(c,"ports","porte"));
+      row.appendChild(num(c,"maxResPort","res/porta"));
+      row.appendChild(txt(c,"k4","4K"));
+      row.appendChild(num(c,"price","€"));
+      row.appendChild(txt(c,"code","codice Odoo"));
+      const rm=document.createElement("button");rm.className="rm";rm.textContent="×";rm.title="Rimuovi";
+      rm.addEventListener("click",()=>{ draftControllers.splice(ci,1); renderCtrlAdmin(); });
+      row.appendChild(rm);
+      host.appendChild(row);
+    });
+  }
+
   $("addProd").addEventListener("click",()=>{ const name=$("newProdName").value.trim(); if(!name) return; draft.push({id:"p_"+Date.now().toString(36),name,resolutions:[],cabinets:[]}); $("newProdName").value=""; renderProdList(); });
-  $("changePw").addEventListener("click",()=>{ const v=$("newPw").value; if(v.length<4){ $("pwOk").style.color="var(--danger)"; $("pwOk").textContent="Minimo 4 caratteri."; return; } DB.password=v; save(); $("newPw").value=""; $("pwOk").style.color="var(--ok)"; $("pwOk").textContent="Password aggiornata."; });
+  $("addCtrl").addEventListener("click",()=>{
+    const model=$("c-mod").value.trim();
+    const maxTotal=numOrUndef($("c-tot").value), maxBase=numOrUndef($("c-base").value), maxHeight=numOrUndef($("c-ht").value);
+    if(!model||!maxTotal||!maxBase||!maxHeight){ alert("Inserisci almeno: Modello, Max px totali, base e altezza."); return; }
+    draftControllers.push({ id:"c_"+Date.now().toString(36), model, maxTotal, maxBase, maxHeight,
+      ports:numOrUndef($("c-ports").value), maxResPort:numOrUndef($("c-rp").value),
+      k4:($("c-k4").value.trim()||undefined), price:numOrUndef($("c-price").value), code:($("c-code").value.trim()||undefined) });
+    ["c-mod","c-tot","c-base","c-ht","c-ports","c-rp","c-k4","c-price","c-code"].forEach(id=>$(id).value="");
+    renderCtrlAdmin();
+  });
+  $("seedHuidu").addEventListener("click",()=>{
+    HUIDU_SEED.forEach(h=>{ if(!draftControllers.some(c=>(c.model||"").toUpperCase()===h.model.toUpperCase())){ draftControllers.push(Object.assign({},h,{id:"c_"+Math.random().toString(36).slice(2,9)})); } });
+    renderCtrlAdmin();
+  });
   $("panelSave").addEventListener("click",()=>{
     DB.products=draft.filter(p=>p.name.trim());
     if(!DB.products.length) DB.products=JSON.parse(JSON.stringify(DEFAULTS.products));
+    DB.controllers=normControllers(draftControllers||[]);
     save();
     if(!DB.products.find(p=>p.id===S.productId)){ S.productId=DB.products[0].id; }
     S.selWc=S.selHc=null; fillProductSelect(); render(); closeAdmin();
@@ -1067,20 +1292,34 @@
   $("panelClose").addEventListener("click",closeAdmin);
 
   $("exportBtn").addEventListener("click",()=>{
-    const data=JSON.stringify({password:DB.password, products:draft||DB.products},null,2);
+    const data=JSON.stringify({password:DB.password, products:draft||DB.products, controllers:draftControllers||DB.controllers||[]},null,2);
     const blob=new Blob([data],{type:"application/json"});
     const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="catalog.json";a.click();URL.revokeObjectURL(a.href);
   });
   $("importBtn").addEventListener("click",()=>$("importFile").click());
+  $("cloudSaveBtn").addEventListener("click",async ()=>{
+    const msg=$("cloudSaveMsg");
+    const token=prompt("Token di salvataggio (impostato su Netlify come ADMIN_TOKEN):");
+    if(token===null) return;
+    if(!token.trim()){ msg.className="odoostatus err"; msg.textContent="Token mancante."; return; }
+    const catalog={ password:DB.password, products:(draft||DB.products), controllers:(draftControllers||DB.controllers||[]) };
+    msg.className="odoostatus wait"; msg.textContent="Salvataggio sul sito in corso…";
+    try{
+      const r=await fetch("/.netlify/functions/save-catalog",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({token:token.trim(),catalog})});
+      const d=await r.json().catch(()=>({}));
+      if(r.ok&&d.ok){ msg.className="odoostatus ok"; msg.textContent="Salvato sul sito: le modifiche sono ora attive per tutti."; }
+      else { msg.className="odoostatus err"; msg.textContent="Errore: "+((d&&d.error)||("HTTP "+r.status))+"."; }
+    }catch(err){ msg.className="odoostatus err"; msg.textContent="Connettore non raggiungibile: verifica di aver deployato save-catalog."; }
+  });
   $("importFile").addEventListener("change",e=>{
-    const f=e.target.files[0]; if(!f) return;
     const rd=new FileReader();
     rd.onload=()=>{ try{ const obj=JSON.parse(rd.result);
       if(obj&&Array.isArray(obj.products)){
         const norm=normalizeDB(obj);
         draft=norm.products;
+        draftControllers=norm.controllers;
         if(typeof obj.password==="string"&&obj.password){ DB.password=obj.password; }
-        renderProdList();
+        renderProdList(); renderCtrlAdmin();
       } else alert("File non valido."); }catch(err){ alert("Impossibile leggere il file."); } };
     rd.readAsText(f); e.target.value="";
   });
@@ -1112,23 +1351,28 @@
 
   function updateSourceNote(){
     const el=$("srcNote"); if(!el) return;
+    if(catalogSource==="cloud"){ el.textContent="Catalogo salvato sul sito · modificabile dal pannello (Salva sul sito)"; el.style.color="var(--ok)"; return; }
     el.textContent = catalogSource==="site"
       ? "Catalogo caricato dal sito (catalog.json)"
-      : "Catalogo locale · per pubblicarlo a tutti, esporta catalog.json e caricalo sul sito";
-    el.style.color = catalogSource==="site" ? "var(--ok)" : "var(--muted-2)";
+      : "Catalogo locale · per pubblicarlo a tutti, salvalo sul sito o esporta catalog.json";
+    el.style.color = (catalogSource==="site"||catalogSource==="cloud") ? "var(--ok)" : "var(--muted-2)";
   }
 
   async function boot(){
+    let loaded=false;
+    // 1) catalogo salvato lato server (persistente, aggiornabile dal pannello)
     try{
-      const res=await fetch("catalog.json?ts="+Date.now(),{cache:"no-store"});
-      if(res.ok){
-        const j=await res.json();
-        if(j && Array.isArray(j.products) && j.products.length){
-          DB=normalizeDB(j); migrate(); catalogSource="site";
-          S.productId=DB.products[0]?DB.products[0].id:null; S.selWc=S.selHc=null;
-        }
-      }
-    }catch(e){ /* nessun catalog.json: si usa il catalogo locale/predefinito */ }
+      const r=await fetch("/.netlify/functions/get-catalog",{cache:"no-store"});
+      if(r.ok){ const j=await r.json(); if(j && Array.isArray(j.products) && j.products.length){ DB=normalizeDB(j); migrate(); catalogSource="cloud"; loaded=true; } }
+    }catch(e){}
+    // 2) fallback: catalog.json statico
+    if(!loaded){
+      try{
+        const res=await fetch("catalog.json?ts="+Date.now(),{cache:"no-store"});
+        if(res.ok){ const j=await res.json(); if(j && Array.isArray(j.products) && j.products.length){ DB=normalizeDB(j); migrate(); catalogSource="site"; loaded=true; } }
+      }catch(e){}
+    }
+    if(loaded){ S.productId=DB.products[0]?DB.products[0].id:null; S.selWc=S.selHc=null; }
     updateSourceNote();
     fillProductSelect(); render();
   }
