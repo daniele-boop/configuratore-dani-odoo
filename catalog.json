@@ -35,12 +35,12 @@
             "r_tm48pzp": 742,
             "r_tsay504": 980
           },
-          "modQty": 4,
           "codes": {
             "r_jhpf0wq": "OSO406432",
             "r_tm48pzp": "OSO306432",
             "r_tsay504": "OSO256432"
-          }
+          },
+          "modQty": 4
         },
         {
           "w": 640,
@@ -53,12 +53,12 @@
             "r_tsay504": 1312,
             "r_jhpf0wq": 727
           },
-          "modQty": 6,
           "codes": {
             "r_jhpf0wq": "OSO406448",
             "r_tm48pzp": "OSO306448",
             "r_tsay504": "OSO256448"
-          }
+          },
+          "modQty": 6
         },
         {
           "w": 640,
@@ -71,12 +71,12 @@
             "r_tm48pzp": 1274,
             "r_tsay504": 1750
           },
-          "modQty": 8,
           "codes": {
             "r_jhpf0wq": "OSO406464",
             "r_tm48pzp": "OSO306464",
             "r_tsay504": "OSO256464"
-          }
+          },
+          "modQty": 8
         },
         {
           "w": 960,
@@ -89,12 +89,12 @@
             "r_tm48pzp": 1242,
             "r_jhpf0wq": 866
           },
-          "modQty": 6,
           "codes": {
             "r_jhpf0wq": "OSO409632",
             "r_tm48pzp": "OSO309632",
             "r_tsay504": "OSO309632"
-          }
+          },
+          "modQty": 6
         },
         {
           "w": 960,
@@ -107,12 +107,12 @@
             "r_tm48pzp": 1584,
             "r_tsay504": 1946
           },
-          "modQty": 9,
           "codes": {
             "r_jhpf0wq": "OSO409648",
             "r_tm48pzp": "OSO309648",
             "r_tsay504": "OSO259648"
-          }
+          },
+          "modQty": 9
         },
         {
           "w": 960,
@@ -125,12 +125,12 @@
             "r_tm48pzp": 1967,
             "r_tsay504": 2674
           },
-          "modQty": 12,
           "codes": {
             "r_jhpf0wq": "OSO409664",
             "r_tm48pzp": "OSO309664",
             "r_tsay504": "OSO259664"
-          }
+          },
+          "modQty": 12
         }
       ]
     },
@@ -201,6 +201,74 @@
           "h": 500
         }
       ]
+    }
+  ],
+  "controllers": [
+    {
+      "id": "hd_a3l",
+      "model": "HD-A3L",
+      "maxTotal": 655350,
+      "maxBase": 8192,
+      "maxHeight": 2560,
+      "ports": 1,
+      "maxResPort": 655350,
+      "k4": "SI",
+      "code": ""
+    },
+    {
+      "id": "hd_a4l",
+      "model": "HD-A4L",
+      "maxTotal": 655350,
+      "maxBase": 16384,
+      "maxHeight": 4096,
+      "ports": 2,
+      "maxResPort": 655350,
+      "k4": "SI",
+      "code": ""
+    },
+    {
+      "id": "hd_a5l",
+      "model": "HD-A5L",
+      "maxTotal": 1300000,
+      "maxBase": 16384,
+      "maxHeight": 4096,
+      "ports": 2,
+      "maxResPort": 655350,
+      "k4": "SI",
+      "code": ""
+    },
+    {
+      "id": "hd_a6l",
+      "model": "HD-A6L",
+      "maxTotal": 2600000,
+      "maxBase": 16384,
+      "maxHeight": 4096,
+      "ports": 4,
+      "maxResPort": 576000,
+      "k4": "SI",
+      "code": ""
+    },
+    {
+      "id": "hd_a7",
+      "model": "HD-A7",
+      "maxTotal": 5160000,
+      "maxBase": 15360,
+      "maxHeight": 4096,
+      "ports": 8,
+      "maxResPort": 655350,
+      "k4": "-",
+      "code": ""
+    },
+    {
+      "id": "hd_a8",
+      "model": "HD-A8",
+      "maxTotal": 8294400,
+      "maxBase": 16384,
+      "maxHeight": 4096,
+      "ports": 8,
+      "maxResPort": 655350,
+      "k4": "-",
+      "code": ""
     }
   ]
 }
