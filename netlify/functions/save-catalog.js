@@ -39,7 +39,7 @@ exports.handler = async (event) => {
 
   try {
     connectLambda(event);
-    const store = getStore({ name: "nseled-catalog", consistency: "strong" });
+    const store = getStore({ name: "nseled-catalog" });
     await store.setJSON("catalog", catalog);
     return { statusCode: 200, headers, body: JSON.stringify({ ok: true, savedAt: new Date().toISOString() }) };
   } catch (err) {

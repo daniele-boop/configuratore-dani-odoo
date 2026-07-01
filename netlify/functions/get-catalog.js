@@ -12,7 +12,7 @@ exports.handler = async (event) => {
   };
   try {
     connectLambda(event);
-    const store = getStore({ name: "nseled-catalog", consistency: "strong" });
+    const store = getStore({ name: "nseled-catalog" });
     const data = await store.get("catalog", { type: "json" });
     if (!data) return { statusCode: 404, headers, body: JSON.stringify({ ok: false }) };
     return { statusCode: 200, headers, body: JSON.stringify(data) };
