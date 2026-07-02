@@ -1302,12 +1302,25 @@
     const token=prompt("Token di salvataggio (impostato su Netlify come ADMIN_TOKEN):");
     if(token===null) return;
     if(!token.trim()){ msg.className="odoostatus err"; msg.textContent="Token mancante."; return; }
-    const catalog={ password:DB.password, products:(draft||DB.products), controllers:(draftControllers||DB.controllers||[]) };
+    const products=(draft||DB.products).filter(p=>p.name.trim());
+    const controllers=normControllers(draftControllers||DB.controllers||[]);
+    const catalog={ password:DB.password, products, controllers };
     msg.className="odoostatus wait"; msg.textContent="Salvataggio sul sito in corso…";
     try{
       const r=await fetch("/.netlify/functions/save-catalog",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({token:token.trim(),catalog})});
       const d=await r.json().catch(()=>({}));
-      if(r.ok&&d.ok){ msg.className="odoostatus ok"; msg.textContent="Salvato sul sito: le modifiche sono ora attive per tutti."; }
+      if(r.ok&&d.ok){
+        // applica subito anche in locale, così pannello e pagina restano allineati
+        if(products.length) DB.products=JSON.parse(JSON.stringify(products));
+        DB.controllers=JSON.parse(JSON.stringify(controllers));
+        catalogSource="cloud"; save();
+        if(!DB.products.find(p=>p.id===S.productId)){ S.productId=DB.products[0].id; }
+        draft=JSON.parse(JSON.stringify(DB.products));
+        draftControllers=JSON.parse(JSON.stringify(DB.controllers));
+        renderProdList(); renderCtrlAdmin();
+        S.selWc=S.selHc=null; fillProductSelect(); updateSourceNote(); render();
+        msg.className="odoostatus ok"; msg.textContent="Salvato sul sito e applicato: le modifiche sono attive per tutti.";
+      }
       else { msg.className="odoostatus err"; msg.textContent="Errore: "+((d&&d.error)||("HTTP "+r.status))+"."; }
     }catch(err){ msg.className="odoostatus err"; msg.textContent="Connettore non raggiungibile: verifica di aver deployato save-catalog."; }
   });
