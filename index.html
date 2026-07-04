@@ -143,6 +143,7 @@
   .altwall{width:100%;text-align:left;display:block;background:var(--panel-2);border:1px solid var(--line-soft);
     border-radius:11px;padding:11px 13px;cursor:pointer;transition:.13s;margin-bottom:8px}
   .altwall:hover{border-color:var(--muted-2)}
+  .altwall:focus-visible{outline:none;border-color:#37c3d1;box-shadow:0 0 0 2px rgba(55,195,209,.55)}
   .altwall.cur{border-color:#37c3d1;background:rgba(55,195,209,.08)}
   .altwall .mix{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--ink);
     display:flex;justify-content:space-between;gap:10px;align-items:baseline}
@@ -1150,7 +1151,7 @@
     let list=[...walls.values()].filter(w=>w.valid);
     const isCur=w=> w.b.total===S.selWc.total && canon(w.b.counts)===canon(S.selWc.counts)
                  && w.h.total===S.selHc.total && canon(w.h.counts)===canon(S.selHc.counts);
-    list.sort((a,b)=> a.close-b.close || a.types-b.types || a.cnt-b.cnt || (a.price-b.price));
+    list.sort((a,b)=> a.close-b.close || a.types-b.types || (a.priceOk===b.priceOk ? a.price-b.price : (a.priceOk?-1:1)) );
     let top=list.slice(0,6);
     const curW=list.find(isCur);
     if(curW && !top.includes(curW)) top=[curW].concat(top).slice(0,6);
@@ -1163,6 +1164,7 @@
       const cur=isCur(w);
       const btn=document.createElement("button");
       btn.className="altwall"+(cur?" cur":"");
+      btn.setAttribute("aria-label", parts.join(", ")+" — "+fmt(w.tW)+" per "+fmt(w.tH)+" mm, "+w.cnt+" cabinet"+(w.priceOk?", "+eur(w.price):"")+(cur?" (attuale)":""));
       let badge = cur ? '<span class="badge">attuale</span>' : (w.uniform? '<span class="badge uni">cabinet uguali</span>':'');
       const dW=Math.round(w.dW), dH=Math.round(w.dH);
       const dCls=(d)=> d===0?'ok':'off';
