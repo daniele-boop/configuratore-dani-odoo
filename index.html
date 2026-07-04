@@ -24,10 +24,10 @@
       radial-gradient(1100px 600px at 82% -8%, rgba(107,74,160,.16), transparent 60%),
       radial-gradient(900px 520px at 8% 108%, rgba(55,195,209,.10), transparent 60%),
       var(--bg);
-    color:var(--ink);font-family:var(--disp);font-size:15px;line-height:1.5;
+    color:var(--ink);font-family:var(--disp);font-size:16px;line-height:1.5;
     min-height:100vh;-webkit-font-smoothing:antialiased;
   }
-  .wrap{max-width:1180px;margin:0 auto;padding:26px 22px 60px}
+  .wrap{max-width:1480px;margin:0 auto;padding:26px 30px 60px}
 
   header.top{display:flex;align-items:center;gap:14px;flex-wrap:wrap;
     padding-bottom:18px;margin-bottom:22px;border-bottom:1px solid var(--line)}
@@ -48,7 +48,7 @@
   .adminbtn:hover{border-color:var(--muted-2);color:var(--ink)}
   .adminbtn svg{width:13px;height:13px}
 
-  .grid{display:grid;grid-template-columns:352px 1fr;gap:22px;align-items:start}
+  .grid{display:grid;grid-template-columns:400px 1fr;gap:26px;align-items:start}
   @media(max-width:880px){.grid{grid-template-columns:1fr}}
 
   .card{background:linear-gradient(180deg,var(--panel),var(--panel-2));
@@ -145,15 +145,15 @@
   .altwall:hover{border-color:var(--muted-2)}
   .altwall:focus-visible{outline:none;border-color:#37c3d1;box-shadow:0 0 0 2px rgba(55,195,209,.55)}
   .altwall.cur{border-color:#37c3d1;background:rgba(55,195,209,.08)}
-  .altwall .mix{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--ink);
+  .altwall .mix{font-family:var(--mono);font-size:14.5px;font-weight:600;color:var(--ink);
     display:flex;justify-content:space-between;gap:10px;align-items:baseline}
   .altwall .badge{font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:#37c3d1;font-weight:600;white-space:nowrap}
   .altwall .badge.uni{color:var(--ok)}
   .altwall .altmarks{margin-left:8px;white-space:nowrap}
-  .altwall .altmarks .mk{font-size:13px;margin-left:4px;vertical-align:baseline}
+  .altwall .altmarks .mk{font-size:39px;line-height:1;margin-left:8px;vertical-align:-8px;display:inline-block}
   .altwall .altmarks .star{color:#f4c430}
   .altwall .altmarks .heart{color:#e2494a}
-  .altwall .meta{font-family:var(--mono);font-size:11.5px;color:var(--muted);margin-top:5px}
+  .altwall .meta{font-family:var(--mono);font-size:12.5px;color:var(--muted);margin-top:5px}
   .altwall .meta .off{color:var(--signal)} .altwall .meta .ok{color:var(--ok)}
   .altwall .meta .w2{color:var(--signal)}
 
@@ -1186,6 +1186,15 @@
       btn.innerHTML='<div class="mix"><span>'+parts.join(" · ")+icons+'</span>'+badge+'</div>'+
         '<div class="meta">'+fmt(w.tW)+' × '+fmt(w.tH)+' mm · Δ <span class="'+dCls(dW)+'">'+signed(dW)+'</span>/<span class="'+dCls(dH)+'">'+signed(dH)+'</span> · '+w.cnt+' cabinet'+priceTxt+'</div>';
       btn.addEventListener("click",()=>{ S.selWc={total:w.b.total,counts:Object.assign({},w.b.counts)}; S.selHc={total:w.h.total,counts:Object.assign({},w.h.counts)}; S.selKey=S.productId+"|"+S.reqW+"x"+S.reqH; render(); });
+      btn.addEventListener("keydown",(e)=>{
+        if(e.key==="ArrowDown"||e.key==="ArrowUp"){
+          e.preventDefault();
+          const items=[...host.querySelectorAll(".altwall")];
+          const i=items.indexOf(e.currentTarget);
+          const ni=e.key==="ArrowDown"?Math.min(i+1,items.length-1):Math.max(i-1,0);
+          if(ni!==i){ items[ni].click(); items[ni].focus(); }
+        }
+      });
       host.appendChild(btn);
     });
   }
