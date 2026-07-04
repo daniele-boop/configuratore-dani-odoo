@@ -684,6 +684,49 @@
 
   const cleanCounts=counts=>{ const c={}; let t=0; Object.keys(counts).forEach(k=>{const q=Math.round(counts[k]); if(q>0){c[k]=q; t+=Number(k)*q;}}); return {total:t,counts:c}; };
   const canon=counts=>Object.keys(counts).filter(k=>counts[k]>0).map(Number).sort((a,b)=>a-b).map(k=>k+"x"+counts[k]).join(",");
+  // Ricompone la griglia valida quando UN asse è fissato a un totale scelto dall'utente.
+  // fixed = "w" oppure "h"; total = misura totale scelta su quell'asse.
+  // Ritorna {wComp,hComp} valida (solo cabinet reali) o null.
+  function validGridFixed(product, fixed, total, reqW, reqH, eW, eH){
+    const other = fixed==="w" ? "h" : "w";
+    const otherReq = other==="w" ? reqW : reqH;
+    const otherEng = other==="w" ? eW : eH;
+    const otherUnits=[...new Set(product.cabinets.map(c=> other==="w"?c.w:c.h))].filter(x=>x>0).sort((a,b)=>b-a);
+    const fixedUnits=[...new Set(product.cabinets.map(c=> fixed==="w"?c.w:c.h))].filter(x=>x>0).sort((a,b)=>b-a);
+    // composizioni dell'asse fissato che danno ESATTAMENTE il totale scelto
+    const fixedComps=(function(){
+      const set=new Map();
+      const add=cc=>{ const {total:t,counts}=cleanCounts(cc); if(t!==total) return; const uu=Object.keys(counts).filter(k=>counts[k]>0).map(Number); const k=canon(counts); if(!set.has(k)) set.set(k,{total:t,counts,units:uu}); };
+      const dec=otherEngFixed(fixed,eW,eH).decompose(total); if(dec) add(dec);
+      // enumerazione a 1-2 unità che danno il totale
+      for(let i=0;i<fixedUnits.length;i++){ const a=fixedUnits[i]; if(total%a===0) add({[a]:total/a});
+        for(let j=i;j<fixedUnits.length;j++){ const b=fixedUnits[j]; for(let ka=0;ka<=total/a;ka++){ const rem=total-ka*a; if(rem<0) break; if(rem%b===0){ const kb=rem/b; if(ka+kb>0) add({[a]:ka,[b]:kb}); } } }
+      }
+      return [...set.values()];
+    })();
+    // candidate per l'altro asse (vicino alla misura richiesta)
+    const otherComps=(function(){
+      const set=new Map();
+      const add=cc=>{ const {total:t,counts}=cleanCounts(cc); if(t<=0) return; const uu=Object.keys(counts).filter(k=>counts[k]>0).map(Number); const k=canon(counts); if(!set.has(k)) set.set(k,{total:t,counts,units:uu}); };
+      const s=otherEng.solve(otherReq); if(s&&s.counts) add(s.counts);
+      otherUnits.forEach(u=>{ const n=Math.max(1,Math.round(otherReq/u)); [n-1,n,n+1,n+2].forEach(k=>{ if(k>=1) add({[u]:k}); }); });
+      for(let i=0;i<otherUnits.length;i++) for(let j=i;j<otherUnits.length;j++){ const a=otherUnits[i],b=otherUnits[j]; for(let ka=0;ka<=Math.ceil(otherReq/a)+1;ka++){ const rem=otherReq-ka*a; if(rem<0) break; const kb=Math.round(rem/b); if(kb>=0&&ka+kb>0) add({[a]:ka,[b]:kb}); } }
+      return [...set.values()];
+    })();
+    const exists=(w,h)=>!!findCab(product,w,h);
+    let best=null;
+    fixedComps.forEach(fc=>otherComps.forEach(oc=>{
+      const wc = fixed==="w" ? fc : oc;
+      const hc = fixed==="w" ? oc : fc;
+      for(const w of wc.units){ for(const h of hc.units){ if(!exists(w,h)) return; } }
+      const dist=Math.abs(oc.total-otherReq);
+      let cnt=0,types=0; wc.units.forEach(w=>hc.units.forEach(h=>{ const q=(wc.counts[w]||0)*(hc.counts[h]||0); if(q){cnt+=q;types++;} }));
+      const cand={wComp:{total:wc.total,counts:wc.counts},hComp:{total:hc.total,counts:hc.counts},dist,cnt,types};
+      if(!best||cand.dist<best.dist||(cand.dist===best.dist&&cand.cnt<best.cnt)||(cand.dist===best.dist&&cand.cnt===best.cnt&&cand.types<best.types)) best=cand;
+    }));
+    return best;
+  }
+  function otherEngFixed(fixed,eW,eH){ return fixed==="w"?eW:eH; }
   function primComp(eng,req){ const s=eng.solve(req); return {total:s.sum,counts:s.counts}; }
   function compFromTotal(eng,total){ return {total, counts: eng.decompose(total)}; }
   function expand(counts){ const a=[]; Object.keys(counts).map(Number).sort((x,y)=>y-x).forEach(k=>{ for(let i=0;i<counts[k];i++)a.push(k); }); return a; }
@@ -813,8 +856,8 @@
     if(S.reqH<minH) note.push("Altezza minima: "+minH+" mm.");
     $("minNote").hidden=note.length===0; $("minNote").textContent=note.join(" ");
 
-    renderChips("w","altBase",S.reqW,S.selWc.total,solW0.reach,eW);
-    renderChips("h","altHeight",S.reqH,S.selHc.total,solH0.reach,eH);
+    renderChips("w","altBase",S.reqW,S.selWc.total,solW0.reach,eW,eW,eH);
+    renderChips("h","altHeight",S.reqH,S.selHc.total,solH0.reach,eH,eW,eH);
 
     const cols=expand(S.selWc.counts), rows=expand(S.selHc.counts);
     renderWall(p,cols,rows,totalW,totalH);
@@ -895,7 +938,7 @@
     }
   }
 
-  function renderChips(kind,elId,req,selTotal,reach,eng){
+  function renderChips(kind,elId,req,selTotal,reach,eng,eW,eH){
     const base=Math.max(req, eng.units.length?Math.min(...eng.units):req);
     const near=reach.map(v=>({v,d:Math.abs(v-base)})).sort((a,b)=>a.d-b.d).slice(0,6).map(o=>o.v);
     const cl=near.slice().sort((a,b)=>Math.abs(a-base)-Math.abs(b-base))[0];
@@ -906,7 +949,13 @@
       const c=document.createElement("button");
       c.className="chip"+(v===selTotal?" on":"")+(v===cl?" closest":"");
       c.innerHTML='<span class="m">'+fmt(v)+'</span><span class="d">'+(d===0?"esatta":(d>0?"+":"")+fmt(d))+'</span>';
-      c.addEventListener("click",()=>{ if(kind==="w")S.selWc=compFromTotal(eng,v); else S.selHc=compFromTotal(eng,v); render(); });
+      c.addEventListener("click",()=>{
+        const p=currentProduct();
+        const vg=validGridFixed(p, kind, v, S.reqW, S.reqH, eW, eH);
+        if(vg){ S.selWc={total:vg.wComp.total,counts:vg.wComp.counts}; S.selHc={total:vg.hComp.total,counts:vg.hComp.counts}; }
+        else { if(kind==="w")S.selWc=compFromTotal(eng,v); else S.selHc=compFromTotal(eng,v); }
+        render();
+      });
       host.appendChild(c);
     });
   }
