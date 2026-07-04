@@ -1147,7 +1147,7 @@
         mix:info.mix,cnt:info.cnt,types:info.types,price:info.price,priceOk:info.priceOk,valid:info.valid,
         uniform:info.types<=1});
     }));
-    let list=[...walls.values()];
+    let list=[...walls.values()].filter(w=>w.valid);
     const isCur=w=> w.b.total===S.selWc.total && canon(w.b.counts)===canon(S.selWc.counts)
                  && w.h.total===S.selHc.total && canon(w.h.counts)===canon(S.selHc.counts);
     list.sort((a,b)=> a.close-b.close || a.types-b.types || a.cnt-b.cnt || (a.price-b.price));
@@ -1167,9 +1167,8 @@
       const dW=Math.round(w.dW), dH=Math.round(w.dH);
       const dCls=(d)=> d===0?'ok':'off';
       const priceTxt = w.priceOk ? " · "+eur(w.price) : "";
-      const warnTxt = w.valid ? "" : ' · <span class="w2">formati non a catalogo</span>';
       btn.innerHTML='<div class="mix"><span>'+parts.join(" · ")+'</span>'+badge+'</div>'+
-        '<div class="meta">'+fmt(w.tW)+' × '+fmt(w.tH)+' mm · Δ <span class="'+dCls(dW)+'">'+signed(dW)+'</span>/<span class="'+dCls(dH)+'">'+signed(dH)+'</span> · '+w.cnt+' cabinet'+priceTxt+warnTxt+'</div>';
+        '<div class="meta">'+fmt(w.tW)+' × '+fmt(w.tH)+' mm · Δ <span class="'+dCls(dW)+'">'+signed(dW)+'</span>/<span class="'+dCls(dH)+'">'+signed(dH)+'</span> · '+w.cnt+' cabinet'+priceTxt+'</div>';
       btn.addEventListener("click",()=>{ S.selWc={total:w.b.total,counts:Object.assign({},w.b.counts)}; S.selHc={total:w.h.total,counts:Object.assign({},w.h.counts)}; S.selKey=S.productId+"|"+S.reqW+"x"+S.reqH; render(); });
       host.appendChild(btn);
     });
