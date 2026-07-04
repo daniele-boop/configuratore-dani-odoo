@@ -117,13 +117,13 @@
   .empty{color:var(--muted-2);font-family:var(--mono);font-size:13px;text-align:center;padding:40px 20px;line-height:1.7}
   .empty b{color:var(--muted);display:block;font-size:14px;margin-bottom:6px}
 
-  .cabtxt{font-family:var(--mono);fill:rgba(255,255,255,.92);font-size:9px}
+  .cabtxt{font-family:var(--mono);fill:rgba(255,255,255,.92);font-size:14px;font-weight:600}
   .dimline{stroke:var(--ruler);stroke-width:1}
   .dimtick{stroke:var(--ruler);stroke-width:1}
   .dimtick.sub{stroke:rgba(84,98,111,.5)}
-  .dimlbl{font-family:var(--mono);fill:var(--ink);font-size:11px;font-weight:600}
+  .dimlbl{font-family:var(--mono);fill:var(--ink);font-size:15px;font-weight:600}
   .reqguide{stroke:var(--signal);stroke-width:1.2;stroke-dasharray:3 3}
-  .reqlbl{font-family:var(--mono);fill:var(--signal);font-size:9.5px;font-weight:600}
+  .reqlbl{font-family:var(--mono);fill:var(--signal);font-size:13px;font-weight:600}
   .badcell{fill:none;stroke:var(--danger);stroke-width:1.4;stroke-dasharray:4 3}
 
   .metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}
@@ -1026,7 +1026,7 @@
           if(nx>1) for(let i=1;i<nx;i++){ const mx=x+(cw/nx)*i*scale; ln(mx,y+1,mx,y+cellH-1); }
           if(ny>1) for(let j=1;j<ny;j++){ const my=y+(rh/ny)*j*scale; ln(x+1,my,x+cellW-1,my); }
         }
-        if(cellW>50&&cellH>22){
+        if(cellW>62&&cellH>28){
           const t=document.createElementNS(NS,"text");t.setAttribute("class","cabtxt");
           t.setAttribute("x",x+cellW/2);t.setAttribute("y",y+cellH/2+3);t.setAttribute("text-anchor","middle");
           t.textContent=cw+"×"+rh;svg.appendChild(t);
