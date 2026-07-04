@@ -149,6 +149,10 @@
     display:flex;justify-content:space-between;gap:10px;align-items:baseline}
   .altwall .badge{font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:#37c3d1;font-weight:600;white-space:nowrap}
   .altwall .badge.uni{color:var(--ok)}
+  .altwall .altmarks{margin-left:8px;white-space:nowrap}
+  .altwall .altmarks .mk{font-size:13px;margin-left:4px;vertical-align:baseline}
+  .altwall .altmarks .star{color:#f4c430}
+  .altwall .altmarks .heart{color:#e2494a}
   .altwall .meta{font-family:var(--mono);font-size:11.5px;color:var(--muted);margin-top:5px}
   .altwall .meta .off{color:var(--signal)} .altwall .meta .ok{color:var(--ok)}
   .altwall .meta .w2{color:var(--signal)}
@@ -1157,19 +1161,29 @@
     if(curW && !top.includes(curW)) top=[curW].concat(top).slice(0,6);
 
     const host=$("altList"); host.innerHTML="";
+    // marca la soluzione con MENO cabinet (numero) e quella più economica tra le mostrate
+    let minCntW=null, cheapW=null;
+    top.forEach(w=>{
+      if(minCntW===null || w.cnt<minCntW.cnt) minCntW=w;
+      if(w.priceOk && (cheapW===null || w.price<cheapW.price)) cheapW=w;
+    });
     top.forEach(w=>{
       const parts=Object.keys(w.mix).sort((x,y)=>{
         const [xw,xh]=x.split("x").map(Number),[yw,yh]=y.split("x").map(Number); return (yw*yh)-(xw*xh);
       }).map(k=>w.mix[k]+"× "+k.replace("x","×"));
       const cur=isCur(w);
+      const isMinCnt=(w===minCntW), isCheap=(w===cheapW);
       const btn=document.createElement("button");
+      btn.type="button"; btn.tabIndex=0;
       btn.className="altwall"+(cur?" cur":"");
-      btn.setAttribute("aria-label", parts.join(", ")+" — "+fmt(w.tW)+" per "+fmt(w.tH)+" mm, "+w.cnt+" cabinet"+(w.priceOk?", "+eur(w.price):"")+(cur?" (attuale)":""));
+      const marks=(isMinCnt?" ★ meno cabinet":"")+(isCheap?" ♥ più economica":"");
+      btn.setAttribute("aria-label", parts.join(", ")+" — "+fmt(w.tW)+" per "+fmt(w.tH)+" mm, "+w.cnt+" cabinet"+(w.priceOk?", "+eur(w.price):"")+marks+(cur?" (attuale)":""));
+      const icons='<span class="altmarks">'+(isMinCnt?'<span class="mk star" title="Meno cabinet">★</span>':'')+(isCheap?'<span class="mk heart" title="Più economica">♥</span>':'')+'</span>';
       let badge = cur ? '<span class="badge">attuale</span>' : (w.uniform? '<span class="badge uni">cabinet uguali</span>':'');
       const dW=Math.round(w.dW), dH=Math.round(w.dH);
       const dCls=(d)=> d===0?'ok':'off';
       const priceTxt = w.priceOk ? " · "+eur(w.price) : "";
-      btn.innerHTML='<div class="mix"><span>'+parts.join(" · ")+'</span>'+badge+'</div>'+
+      btn.innerHTML='<div class="mix"><span>'+parts.join(" · ")+icons+'</span>'+badge+'</div>'+
         '<div class="meta">'+fmt(w.tW)+' × '+fmt(w.tH)+' mm · Δ <span class="'+dCls(dW)+'">'+signed(dW)+'</span>/<span class="'+dCls(dH)+'">'+signed(dH)+'</span> · '+w.cnt+' cabinet'+priceTxt+'</div>';
       btn.addEventListener("click",()=>{ S.selWc={total:w.b.total,counts:Object.assign({},w.b.counts)}; S.selHc={total:w.h.total,counts:Object.assign({},w.h.counts)}; S.selKey=S.productId+"|"+S.reqW+"x"+S.reqH; render(); });
       host.appendChild(btn);
