@@ -837,11 +837,13 @@
 
     const eW=engine(p.cabinets.map(c=>c.w)), eH=engine(p.cabinets.map(c=>c.h));
     const solW0=eW.solve(S.reqW), solH0=eH.solve(S.reqH);
-    if(!S.selWc || !S.selHc){
-      // composizione predefinita: griglia con SOLI cabinet esistenti, più vicina alla misura
+    const reqKey=S.productId+"|"+S.reqW+"x"+S.reqH;
+    if(S.selKey!==reqKey || !S.selWc || !S.selHc){
+      // richiesta/prodotto cambiati (o prima apertura): ricomponi la griglia valida predefinita
       const vg=validGrid(p,S.reqW,S.reqH,eW,eH);
       if(vg){ S.selWc={total:vg.wComp.total,counts:vg.wComp.counts}; S.selHc={total:vg.hComp.total,counts:vg.hComp.counts}; }
-      else { if(!S.selWc) S.selWc={total:solW0.sum,counts:solW0.counts}; if(!S.selHc) S.selHc={total:solH0.sum,counts:solH0.counts}; }
+      else { S.selWc={total:solW0.sum,counts:solW0.counts}; S.selHc={total:solH0.sum,counts:solH0.counts}; }
+      S.selKey=reqKey;
     }
     const totalW=S.selWc.total, totalH=S.selHc.total;
 
@@ -954,6 +956,7 @@
         const vg=validGridFixed(p, kind, v, S.reqW, S.reqH, eW, eH);
         if(vg){ S.selWc={total:vg.wComp.total,counts:vg.wComp.counts}; S.selHc={total:vg.hComp.total,counts:vg.hComp.counts}; }
         else { if(kind==="w")S.selWc=compFromTotal(eng,v); else S.selHc=compFromTotal(eng,v); }
+        S.selKey=S.productId+"|"+S.reqW+"x"+S.reqH;
         render();
       });
       host.appendChild(c);
@@ -1159,7 +1162,7 @@
       const warnTxt = w.valid ? "" : ' · <span class="w2">formati non a catalogo</span>';
       btn.innerHTML='<div class="mix"><span>'+parts.join(" · ")+'</span>'+badge+'</div>'+
         '<div class="meta">'+fmt(w.tW)+' × '+fmt(w.tH)+' mm · Δ <span class="'+dCls(dW)+'">'+signed(dW)+'</span>/<span class="'+dCls(dH)+'">'+signed(dH)+'</span> · '+w.cnt+' cabinet'+priceTxt+warnTxt+'</div>';
-      btn.addEventListener("click",()=>{ S.selWc={total:w.b.total,counts:Object.assign({},w.b.counts)}; S.selHc={total:w.h.total,counts:Object.assign({},w.h.counts)}; render(); });
+      btn.addEventListener("click",()=>{ S.selWc={total:w.b.total,counts:Object.assign({},w.b.counts)}; S.selHc={total:w.h.total,counts:Object.assign({},w.h.counts)}; S.selKey=S.productId+"|"+S.reqW+"x"+S.reqH; render(); });
       host.appendChild(btn);
     });
   }
@@ -1177,7 +1180,14 @@
     const lbl=document.createElement("span");lbl.className="lbl";lbl.textContent="Più vicino al 16:9:";
     const btn=document.createElement("button");
     btn.textContent=fmt(W)+" × "+fmt(H)+" mm  ("+(W/H).toFixed(2).replace(".",",")+":1)";
-    btn.addEventListener("click",()=>{ S.selWc=compFromTotal(eW,W); S.selHc=compFromTotal(eH,H); render(); });
+    btn.addEventListener("click",()=>{
+      const p=currentProduct();
+      const vg=validGridFixed(p,"w",W,W,H,eW,eH);
+      if(vg){ S.selWc={total:vg.wComp.total,counts:vg.wComp.counts}; S.selHc={total:vg.hComp.total,counts:vg.hComp.counts}; }
+      else { S.selWc=compFromTotal(eW,W); S.selHc=compFromTotal(eH,H); }
+      S.selKey=S.productId+"|"+S.reqW+"x"+S.reqH;
+      render();
+    });
     host.appendChild(lbl); host.appendChild(btn);
   }
 
