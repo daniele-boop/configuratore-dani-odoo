@@ -380,11 +380,6 @@
         <div id="bomList"></div>
         <div class="bomtot"><span>Totale cabinet</span><b id="bomTotal">0</b></div>
         <div class="strategy">Composizione predefinita: cabinet più grandi e uniformi possibile, per ridurre pezzi e costo.</div>
-        <div class="odoobar">
-          <button class="btn ghost sm" id="odooExport">Esporta offerta (JSON)</button>
-          <button class="btn primary sm" id="odooSend">Invia a Odoo</button>
-        </div>
-        <div class="odoostatus" id="odooStatus"></div>
       </section>
 
       <section class="card" id="specCard" hidden>
@@ -402,6 +397,15 @@
         <div id="ctrlHint" class="ctrlhint"></div>
         <div id="ctrlList"></div>
         <div class="strategy">Compatibilità sui pixel della parete: il controller deve reggere pixel totali, base e altezza. Seleziona quelli da includere nel preventivo.</div>
+      </section>
+
+      <section class="card" id="offerCard" hidden>
+        <p class="eyebrow">Invio offerta</p>
+        <div class="odoobar">
+          <button class="btn ghost sm" id="odooExport">Esporta offerta (JSON)</button>
+          <button class="btn primary sm" id="odooSend">Invia a Odoo</button>
+        </div>
+        <div class="odoostatus" id="odooStatus"></div>
       </section>
     </div>
   </div>
@@ -642,6 +646,42 @@
     };
   }
 
+  // ---- griglia valida: ogni cella (larghezza colonna × altezza riga) deve essere un cabinet reale ----
+  // Restituisce {wComp,hComp} la cui area totale è più vicina a reqW×reqH usando SOLO cabinet esistenti.
+  function validGrid(product, reqW, reqH, eW, eH){
+    const widths=[...new Set(product.cabinets.map(c=>c.w))].filter(w=>w>0).sort((a,b)=>b-a);
+    const heights=[...new Set(product.cabinets.map(c=>c.h))].filter(h=>h>0).sort((a,b)=>b-a);
+    const exists=(w,h)=>!!findCab(product,w,h);
+    function axisComps(units, req, eng){
+      const set=new Map();
+      const add=cc=>{ const {total,counts}=cleanCounts(cc); if(total<=0) return; const usedU=Object.keys(counts).filter(k=>counts[k]>0).map(Number); const k=canon(counts); if(!set.has(k)) set.set(k,{total,counts,units:usedU}); };
+      const s=eng.solve(req); if(s&&s.counts) add(s.counts);
+      units.forEach(u=>{ const n=Math.max(1,Math.round(req/u)); [n-1,n,n+1,n+2].forEach(k=>{ if(k>=1) add({[u]:k}); }); });
+      for(let i=0;i<units.length;i++) for(let j=i;j<units.length;j++){
+        const a=units[i], b=units[j];
+        for(let ka=0;ka<=Math.ceil(req/a)+1;ka++){ const rem=req-ka*a; if(rem<0) break; const kb=Math.round(rem/b); if(kb>=0 && (ka+kb)>0) add({[a]:ka,[b]:kb}); }
+      }
+      return [...set.values()];
+    }
+    const wComps=axisComps(widths, reqW, eW);
+    const hComps=axisComps(heights, reqH, eH);
+    let best=null;
+    wComps.forEach(wc=>{
+      hComps.forEach(hc=>{
+        for(const w of wc.units){ for(const h of hc.units){ if(!exists(w,h)) return; } }
+        const dist=Math.abs(wc.total-reqW)+Math.abs(hc.total-reqH);
+        let cnt=0, types=0;
+        wc.units.forEach(w=>hc.units.forEach(h=>{ const q=(wc.counts[w]||0)*(hc.counts[h]||0); if(q){ cnt+=q; types++; } }));
+        const cand={wComp:{total:wc.total,counts:wc.counts}, hComp:{total:hc.total,counts:hc.counts}, dist, cnt, types};
+        if(!best){ best=cand; return; }
+        if(cand.dist<best.dist ||
+          (cand.dist===best.dist && cand.cnt<best.cnt) ||
+          (cand.dist===best.dist && cand.cnt===best.cnt && cand.types<best.types)) best=cand;
+      });
+    });
+    return best;
+  }
+
   const cleanCounts=counts=>{ const c={}; let t=0; Object.keys(counts).forEach(k=>{const q=Math.round(counts[k]); if(q>0){c[k]=q; t+=Number(k)*q;}}); return {total:t,counts:c}; };
   const canon=counts=>Object.keys(counts).filter(k=>counts[k]>0).map(Number).sort((a,b)=>a-b).map(k=>k+"x"+counts[k]).join(",");
   function primComp(eng,req){ const s=eng.solve(req); return {total:s.sum,counts:s.counts}; }
@@ -746,7 +786,7 @@
 
     const p=currentProduct();
     const has = p && p.cabinets.length && S.reqW!==null && S.reqH!==null;
-    ["resultCard","bomCard","metrics","specCard","altCard","ctrlCard"].forEach(id=>$(id).hidden=!has);
+    ["resultCard","bomCard","metrics","specCard","altCard","ctrlCard","offerCard"].forEach(id=>$(id).hidden=!has);
     const hasMod = p && p.modW>0 && p.modH>0;
     $("modToggle").hidden = !(has && hasMod);
     if(has && hasMod){ $("modToggle").setAttribute("aria-pressed", S.showModules?"true":"false"); $("modToggle").textContent = "Moduli: "+(S.showModules?"on":"off"); }
@@ -754,8 +794,12 @@
 
     const eW=engine(p.cabinets.map(c=>c.w)), eH=engine(p.cabinets.map(c=>c.h));
     const solW0=eW.solve(S.reqW), solH0=eH.solve(S.reqH);
-    if(!S.selWc) S.selWc={total:solW0.sum,counts:solW0.counts};
-    if(!S.selHc) S.selHc={total:solH0.sum,counts:solH0.counts};
+    if(!S.selWc || !S.selHc){
+      // composizione predefinita: griglia con SOLI cabinet esistenti, più vicina alla misura
+      const vg=validGrid(p,S.reqW,S.reqH,eW,eH);
+      if(vg){ S.selWc={total:vg.wComp.total,counts:vg.wComp.counts}; S.selHc={total:vg.hComp.total,counts:vg.hComp.counts}; }
+      else { if(!S.selWc) S.selWc={total:solW0.sum,counts:solW0.counts}; if(!S.selHc) S.selHc={total:solH0.sum,counts:solH0.counts}; }
+    }
     const totalW=S.selWc.total, totalH=S.selHc.total;
 
     $("resBase").innerHTML=fmt(totalW)+' <small>mm</small>';
