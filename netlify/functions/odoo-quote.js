@@ -135,12 +135,12 @@ exports.handler = async (event) => {
 
     // allega le schede tecniche (PNG) come ir.attachment collegati al preventivo
     const serial = (offer.serial && String(offer.serial).trim()) ? String(offer.serial).trim() : String(orderId);
-    let attached = 0;
+    let attached = 0; const attachErrors = [];
     const attach = async (dataUrl, label) => {
-      if (typeof dataUrl !== "string" || dataUrl.indexOf("base64,") < 0) return;
+      if (typeof dataUrl !== "string" || dataUrl.indexOf("base64,") < 0) { attachErrors.push(label + ":assente"); return; }
       const b64 = dataUrl.substring(dataUrl.indexOf("base64,") + 7);
       try {
-        await kw(uid, "ir.attachment", "create", [{
+        const aid = await kw(uid, "ir.attachment", "create", [{
           name: `Scheda_${label}_${serial}.png`,
           type: "binary",
           datas: b64,
@@ -148,13 +148,15 @@ exports.handler = async (event) => {
           res_id: orderId,
           mimetype: "image/png"
         }]);
-        attached++;
-      } catch (e) { /* allegato non bloccante */ }
+        if (aid) attached++;
+        // pubblica nel chatter così l'allegato è ben visibile
+        try { await kw(uid, "sale.order", "message_post", [orderId], { body: `Scheda tecnica ${label}`, attachment_ids: [aid] }); } catch (e) {}
+      } catch (e) { attachErrors.push(label + ":" + String(e.message || e).slice(0, 160)); }
     };
     await attach(offer.sheetItaPng, "ITA");
     await attach(offer.sheetEngPng, "ENG");
 
-    return { statusCode: 200, headers: cors, body: JSON.stringify({ ok: true, order_id: orderId, name, url, attached }) };
+    return { statusCode: 200, headers: cors, body: JSON.stringify({ ok: true, order_id: orderId, name, url, attached, attachErrors }) };
   } catch (err) {
     return { statusCode: 500, headers: cors, body: JSON.stringify({ ok: false, error: String(err.message || err) }) };
   }
