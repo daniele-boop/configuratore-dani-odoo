@@ -256,6 +256,7 @@
   .pdesc{margin:2px 0 12px}
   .pdesc label{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.03em;text-transform:uppercase;color:var(--muted-2);margin-bottom:5px}
   .pdesc input{width:100%;padding:9px 11px;font-size:13px}
+  .pdesc textarea{width:100%;padding:9px 11px;font-size:13px;font-family:var(--disp);resize:vertical;line-height:1.5}
 
   .pcrow{display:grid;grid-template-columns:74px 90px 1fr;gap:8px;align-items:center;margin-bottom:7px}
   .pcrow .pclab{font-family:var(--mono);font-size:12px;color:var(--muted)}
@@ -269,6 +270,21 @@
   .odoostatus{font-family:var(--mono);font-size:11.5px;margin-top:9px;line-height:1.5}
   .odoostatus a{color:#37c3d1}
   .odoostatus.ok{color:var(--ok)} .odoostatus.err{color:var(--danger)} .odoostatus.wait{color:var(--muted)}
+
+  .salesgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+  .sbox{background:var(--panel-2);border:1px solid var(--line-soft);border-radius:11px;padding:12px 14px}
+  .sbox .sk{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted-2);margin-bottom:6px}
+  .sbox .sv{font-family:var(--mono);font-size:18px;font-weight:600;color:var(--ink)}
+  .sbox .ssub{font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:4px;line-height:1.4}
+  .energy{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:12px;align-items:center;font-family:var(--mono);font-size:12px;color:var(--muted)}
+  .energy .elabel{color:var(--muted-2);text-transform:uppercase;letter-spacing:.06em;font-size:10.5px}
+  .energy label{display:flex;align-items:center;gap:6px;color:var(--muted)}
+  .energy input{width:70px;padding:6px 8px;font-size:12.5px;text-align:center}
+  .energy .eout{color:var(--ink)} .energy .eout b{color:#8fe0b8} .energy .emut{color:var(--muted-2)}
+  .selling{margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+  .selling .stitle{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted-2);margin-bottom:8px}
+  .selling .spt{font-size:13.5px;color:var(--ink);padding:5px 0 5px 18px;position:relative;line-height:1.5}
+  .selling .spt::before{content:"→";position:absolute;left:0;color:#37c3d1}
 
   .ctrlhint{font-family:var(--mono);font-size:12px;color:var(--ink);margin-bottom:12px}
   .ctrlhint.muted{color:var(--muted-2)}
@@ -411,6 +427,18 @@
         <div id="ctrlHint" class="ctrlhint"></div>
         <div id="ctrlList"></div>
         <div class="strategy">Compatibilità sui pixel della parete: il controller deve reggere pixel totali, base e altezza. Seleziona quelli da includere nel preventivo.</div>
+      </section>
+
+      <section class="card" id="salesCard" hidden>
+        <p class="eyebrow">Argomenti di vendita</p>
+        <div class="salesgrid" id="salesGrid"></div>
+        <div class="energy" id="energyRow">
+          <span class="elabel">Costo elettrico stimato:</span>
+          <label>ore/giorno <input type="number" id="enHours" min="0" max="24" step="0.5" value="10"></label>
+          <label>€/kWh <input type="number" id="enRate" min="0" step="0.01" value="0,25"></label>
+          <span class="eout" id="enOut">—</span>
+        </div>
+        <div class="selling" id="sellingBox" hidden></div>
       </section>
 
       <section class="card" id="offerCard" hidden>
@@ -591,6 +619,7 @@
           id:p.id||("p_"+Math.random().toString(36).slice(2)),
           name:p.name||"Prodotto",
           desc:(typeof p.desc==="string"?p.desc:undefined),
+          selling:(typeof p.selling==="string"?p.selling:undefined),
           modW, modH,
           resolutions:(Array.isArray(p.resolutions)?p.resolutions:[]).filter(r=>r&&r.pitch>0).map(r=>({id:r.id||rid(),label:(r.label||("P"+r.pitch)),pitch:r.pitch})),
           cabinets:cabs.map(c=>({
@@ -899,7 +928,7 @@
 
     const p=currentProduct();
     const has = p && p.cabinets.length && S.reqW!==null && S.reqH!==null;
-    ["resultCard","bomCard","metrics","specCard","altCard","ctrlCard","offerCard"].forEach(id=>$(id).hidden=!has);
+    ["resultCard","bomCard","metrics","specCard","altCard","ctrlCard","salesCard","offerCard"].forEach(id=>$(id).hidden=!has);
     const hasMod = p && p.modW>0 && p.modH>0;
     $("modToggle").hidden = !(has && hasMod);
     if(has && hasMod){ $("modToggle").setAttribute("aria-pressed", S.showModules?"true":"false"); $("modToggle").textContent = "Moduli: "+(S.showModules?"on":"off"); }
@@ -945,6 +974,58 @@
     renderRatioSuggest(eW,eH,totalW,totalH);
     renderAltWalls(p,eW,eH,S.reqW,S.reqH);
     renderControllers();
+    renderSales(p,cols,rows,totalW,totalH);
+  }
+
+  function renderSales(product,cols,rows,totalW,totalH){
+    const grid=$("salesGrid"); grid.innerHTML="";
+    const pitch=S.res?S.res.pitch:0;
+    const px=pitch>0?Math.round(totalW/pitch):0, py=pitch>0?Math.round(totalH/pitch):0;
+    const totPx=px*py;
+    const area=(totalW*totalH)/1e6; // m²
+    // potenza e peso totali
+    const cw={};cols.forEach(w=>cw[w]=(cw[w]||0)+1); const rh={};rows.forEach(h=>rh[h]=(rh[h]||0)+1);
+    let pMax=0,wSum=0,anyP=false,anyW=false;
+    Object.keys(cw).forEach(w=>Object.keys(rh).forEach(h=>{
+      const q=cw[w]*rh[h]; if(!q) return; const cab=findCab(product,+w,+h); if(!cab) return;
+      if(cab.power>0){ pMax+=q*cab.power; anyP=true; } if(cab.weight>0){ wSum+=q*cab.weight; anyW=true; }
+    }));
+    const pAvg=pMax*0.4; // assorbimento medio ~40% del picco (regola pratica)
+    const card=(k,v,sub)=>{ const b=document.createElement("div");b.className="sbox";
+      b.innerHTML='<div class="sk">'+k+'</div><div class="sv">'+v+'</div>'+(sub?'<div class="ssub">'+sub+'</div>':''); return b; };
+    // distanza di visione
+    if(pitch>0){
+      const dMin=pitch, dOpt=pitch*3; // min ~ pitch in m; comfort fino a ~3x (regola pratica)
+      grid.appendChild(card("Distanza di visione", "da ~"+dMin.toString().replace(".",",")+" m",
+        "nitida da "+dMin.toString().replace(".",",")+" m · resa ottimale "+dMin.toString().replace(".",",")+"–"+dOpt.toFixed(0)+" m"));
+    }
+    // risoluzione
+    if(totPx>0){
+      let equiv=""; if(px>=3840&&py>=2160) equiv="oltre il 4K"; else if(px>=1920&&py>=1080) equiv="≈ Full HD o più"; else if(px>=1280&&py>=720) equiv="≈ HD";
+      grid.appendChild(card("Risoluzione", fmt(px)+"×"+fmt(py)+" px", (totPx/1e6).toFixed(2).replace(".",",")+" Mpx"+(equiv?" · "+equiv:"")));
+    }
+    grid.appendChild(card("Superficie", area.toFixed(2).replace(".",",")+" m²", cols.length*rows.length+" cabinet"));
+    if(anyP) grid.appendChild(card("Consumo", (pMax/1000).toFixed(2).replace(".",",")+" kW picco", "~"+(pAvg/1000).toFixed(2).replace(".",",")+" kW medio"));
+    if(anyW) grid.appendChild(card("Peso totale", fmt(wSum)+" kg", (wSum/area).toFixed(0)+" kg/m²"));
+
+    // costo elettrico annuo
+    $("energyRow").hidden = !anyP;
+    if(anyP){
+      const hrs=parseFloat(($("enHours").value||"0").replace(",","."))||0;
+      const rate=parseFloat(($("enRate").value||"0").replace(",","."))||0;
+      const kwhYear=(pAvg/1000)*hrs*365;
+      const costYear=kwhYear*rate;
+      $("enOut").innerHTML = (hrs>0&&rate>0)
+        ? "≈ <b>"+eur(costYear)+"/anno</b> <span class='emut'>("+fmt(kwhYear)+" kWh · "+hrs.toString().replace(".",",")+" h/g)</span>"
+        : "<span class='emut'>imposta ore e €/kWh</span>";
+    }
+    // punti di forza per prodotto
+    const sb=$("sellingBox");
+    if(product.selling && product.selling.trim()){
+      sb.hidden=false;
+      sb.innerHTML='<div class="stitle">Punti di forza</div>'+
+        product.selling.split(/\n+/).filter(Boolean).map(l=>'<div class="spt">'+l.replace(/^[-•]\s*/,"")+'</div>').join("");
+    } else sb.hidden=true;
   }
 
   function renderControllers(){
@@ -1399,6 +1480,14 @@
       di.addEventListener("input",()=>p.desc=(di.value||undefined));
       dwrap.appendChild(dl);dwrap.appendChild(di);box.appendChild(dwrap);
 
+      // --- punti di forza (uno per riga) usati nella card Argomenti di vendita ---
+      const swrap=document.createElement("div");swrap.className="pdesc";
+      const sl=document.createElement("label");sl.textContent="Punti di forza (uno per riga, mostrati negli Argomenti di vendita)";
+      const sta=document.createElement("textarea");sta.rows=4;sta.placeholder="es.\nManutenzione frontale, nessun accesso posteriore\nGaranzia 3 anni\nQualità del pitch: come Audi vs Dacia";
+      if(p.selling)sta.value=p.selling;
+      sta.addEventListener("input",()=>p.selling=(sta.value||undefined));
+      swrap.appendChild(sl);swrap.appendChild(sta);box.appendChild(swrap);
+
       // --- risoluzioni del modello ---
       if(!Array.isArray(p.resolutions)) p.resolutions=[];
       const rb=document.createElement("div");rb.className="resblock";
@@ -1560,6 +1649,7 @@
   let deb;
   ["inBase","inHeight"].forEach(id=>$(id).addEventListener("input",()=>{ clearTimeout(deb); deb=setTimeout(()=>{ S.selWc=S.selHc=null; render(); },120); }));
   $("inPitch").addEventListener("change",render);
+  ["enHours","enRate"].forEach(id=>{ const el=$(id); if(el) el.addEventListener("input",render); });
   $("modToggle").addEventListener("click",()=>{ S.showModules=!S.showModules; render(); });
   $("odooExport").addEventListener("click",()=>{
     const off=buildOffer(); if(!off) return;
