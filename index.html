@@ -663,6 +663,7 @@
           name:p.name||"Prodotto",
           desc:(typeof p.desc==="string"?p.desc:undefined),
           selling:(typeof p.selling==="string"?p.selling:undefined),
+          sellingEn:(typeof p.sellingEn==="string"?p.sellingEn:undefined),
           wPerSqm:(+p.wPerSqm>0?+p.wPerSqm:undefined),
           modD:(+p.modD>0?+p.modD:undefined),
           tech:normTech(p.tech),
@@ -858,6 +859,22 @@
     addr:"Via della Liberazione 44 · 20098 San Giuliano Milanese (MI) · Italia",
     contacts:"Tel. +39 02 50042152 · info@nseled.eu · www.nseled.eu · P.IVA IT11840100967"
   };
+  const TECH_VAL_EN={
+    "anteriore e posteriore":"Front and rear","fino a":"up to",
+    "indoor":"Indoor","outdoor":"Outdoor","interno":"Indoor","esterno":"Outdoor",
+    "anteriore":"Front","posteriore":"Rear","frontale":"Front","retro":"Rear","fronte":"Front",
+    "alluminio":"Aluminium","acciaio":"Steel","ferro":"Iron","plastica":"Plastic","magnesio":"Magnesium","vetro":"Glass",
+    "magnetico":"Magnetic","circa":"approx.","ore":"hours","anni":"years","mesi":"months"
+  };
+  function trTechValue(v){
+    if(!v) return v; let s=String(v); const low=s.toLowerCase().trim();
+    if(TECH_VAL_EN[low]) return TECH_VAL_EN[low];
+    Object.keys(TECH_VAL_EN).sort((a,b)=>b.length-a.length).forEach(k=>{
+      const re=new RegExp("\\b"+k.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"\\b","gi");
+      s=s.replace(re,TECH_VAL_EN[k]);
+    });
+    return s;
+  }
   const SHEET_I18N={
     it:{ title:"SCHEDA TECNICA", tab:"Scheda tecnica", key:"Punti di forza",
       usage:"Utilizzo", size:"Dimensione totale schermo (mm)", surface:"Superficie schermo (m²)",
@@ -915,7 +932,8 @@
 
     // --- tabella specifiche (destra) ---
     const rowsHtml=[]; const R=(k,v)=>{ if(v!==undefined&&v!==""&&v!==null) rowsHtml.push('<tr><th>'+k+'</th><td>'+v+'</td></tr>'); };
-    R(T.usage, t.usage);
+    const TV=v=>(lang==="en"?trTechValue(v):v);
+    R(T.usage, TV(t.usage));
     R(T.size, fmt(totalW)+" × "+fmt(totalH));
     R(T.surface, num(area,2));
     if(pitch>0) R(T.pitch, String(pitch).replace(".",",")+(S.res.label?" · "+S.res.label:""));
@@ -924,21 +942,21 @@
     R(T.cabinets, cnt+" ("+cols.length+"×"+rows.length+")");
     if(totPx>0) R(T.physRes, fmt(px)+"×"+fmt(py));
     if(totPx>0) R(T.density, fmt(Math.round(totPx/area)));
-    R(T.ledPix, t.ledType);
-    R(T.hz, t.hz);
-    R(T.angle, t.angle);
+    R(T.ledPix, TV(t.ledType));
+    R(T.hz, TV(t.hz));
+    R(T.angle, TV(t.angle));
     if(pitch>0) R(T.distance, "~"+String(pitch).replace(".",","));
-    R(T.nit, t.nit);
+    R(T.nit, TV(t.nit));
     if(anyP) R(T.cons, p.wPerSqm+" · "+num(pAvg/1000,2)+" kW");
     if(anyW) R(T.weight, Math.round(kgSqm)+" · "+fmt(Math.round(wSum)));
-    R(T.temp, t.tempOp);
-    R(T.life, t.life);
-    R(T.ip, t.ip);
+    R(T.temp, TV(t.tempOp));
+    R(T.life, TV(t.life));
+    R(T.ip, TV(t.ip));
     R(T.format, (totalW/g<=40&&totalH/g<=40)?fmtRatio:num(totalW/totalH,2));
-    R(T.maint, t.maintenance);
-    R(T.cert, t.cert);
-    R(T.material, t.material);
-    R(T.video, t.videoInput);
+    R(T.maint, TV(t.maintenance));
+    R(T.cert, TV(t.cert));
+    R(T.material, TV(t.material));
+    R(T.video, TV(t.videoInput));
 
     // --- fascia icone (sinistra) ---
     const ic={
@@ -956,10 +974,11 @@
     IC(ic.lum,T.icLum,t.nit?(t.nit+" NIT"):"");
     IC(ic.cons,T.icCons,anyP?(num(pAvg/1000,2)+" kW"):"");
     IC(ic.peso,T.icWeight,anyW?(fmt(Math.round(wSum))+" Kg"):"");
-    IC(ic.ip,T.icIp,t.ip||"");
+    IC(ic.ip,T.icIp,TV(t.ip)||"");
 
-    const selling=(p.selling&&p.selling.trim())
-      ? '<div class="sf"><h3>'+T.key+'</h3><ul>'+p.selling.split(/\n+/).filter(Boolean).map(l=>'<li>'+esc(l.replace(/^[-•]\s*/,""))+'</li>').join("")+'</ul></div>'
+    const sellingSrc=(lang==="en"&&p.sellingEn&&p.sellingEn.trim())?p.sellingEn:p.selling;
+    const selling=(sellingSrc&&sellingSrc.trim())
+      ? '<div class="sf"><h3>'+T.key+'</h3><ul>'+sellingSrc.split(/\n+/).filter(Boolean).map(l=>'<li>'+esc(l.replace(/^[-•]\s*/,""))+'</li>').join("")+'</ul></div>'
       : '';
     const dateStr=new Date().toLocaleDateString(T.loc);
 
@@ -1720,6 +1739,14 @@
       if(p.selling)sta.value=p.selling;
       sta.addEventListener("input",()=>p.selling=(sta.value||undefined));
       swrap.appendChild(sl);swrap.appendChild(sta);box.appendChild(swrap);
+
+      // --- punti di forza in inglese (per la scheda ENG) ---
+      const swrapE=document.createElement("div");swrapE.className="pdesc";
+      const slE=document.createElement("label");slE.textContent="Punti di forza — English (per la Scheda ENG; se vuoto usa l'italiano)";
+      const staE=document.createElement("textarea");staE.rows=4;staE.placeholder="e.g.\nFront maintenance access\nHigh-brightness Nationstar LED\n24-month warranty";
+      if(p.sellingEn)staE.value=p.sellingEn;
+      staE.addEventListener("input",()=>p.sellingEn=(staE.value||undefined));
+      swrapE.appendChild(slE);swrapE.appendChild(staE);box.appendChild(swrapE);
 
       // --- scheda tecnica: campi tecnici + foto prodotto ---
       const tsec=document.createElement("div");tsec.className="techsec";
