@@ -1,0 +1,1620 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NSELED · Configuratore parete LED</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#12161b; --panel:#1a1f26; --panel-2:#161b21;
+    --line:#29313b; --line-soft:#222932;
+    --ink:#eaeff5; --muted:#8996a5; --muted-2:#5f6b78;
+    --signal:#f2b134; --ok:#5fd39a; --danger:#e8695f; --ruler:#54626f;
+    --r:14px;
+    --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+    --disp:"Space Grotesk",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:
+      radial-gradient(1100px 600px at 82% -8%, rgba(107,74,160,.16), transparent 60%),
+      radial-gradient(900px 520px at 8% 108%, rgba(55,195,209,.10), transparent 60%),
+      var(--bg);
+    color:var(--ink);font-family:var(--disp);font-size:16px;line-height:1.5;
+    min-height:100vh;-webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1480px;margin:0 auto;padding:26px 30px 60px}
+
+  header.top{display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+    padding-bottom:18px;margin-bottom:22px;border-bottom:1px solid var(--line)}
+  .brand{display:flex;align-items:center;gap:11px}
+  .logo{width:30px;height:30px;border-radius:7px;flex:none;
+    background:linear-gradient(135deg,#37c3d1,#8b62c4);
+    box-shadow:0 0 0 1px rgba(255,255,255,.06) inset,0 6px 18px -8px rgba(55,195,209,.6);position:relative}
+  .logo::after{content:"";position:absolute;inset:6px;border-radius:3px;
+    background-image:linear-gradient(var(--bg) 1px,transparent 1px),linear-gradient(90deg,var(--bg) 1px,transparent 1px);
+    background-size:6px 6px;opacity:.5}
+  .brand b{font-weight:700;letter-spacing:.5px}
+  .brand span{color:var(--muted);font-weight:500}
+  h1{font-size:15px;font-weight:600;margin:0}
+  .top .spacer{margin-left:auto}
+  .adminbtn{background:var(--panel);border:1px solid var(--line);color:var(--muted);
+    font-family:var(--mono);font-size:12px;border-radius:9px;padding:9px 13px;cursor:pointer;
+    display:inline-flex;align-items:center;gap:7px;transition:.14s}
+  .adminbtn:hover{border-color:var(--muted-2);color:var(--ink)}
+  .adminbtn svg{width:13px;height:13px}
+
+  .grid{display:grid;grid-template-columns:400px 1fr;gap:26px;align-items:start}
+  @media(max-width:880px){.grid{grid-template-columns:1fr}}
+
+  .card{background:linear-gradient(180deg,var(--panel),var(--panel-2));
+    border:1px solid var(--line);border-radius:var(--r);padding:20px}
+  .card + .card{margin-top:18px}
+  .previewcard{padding:18px}
+
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--muted-2);margin:0 0 14px;display:flex;align-items:center;gap:8px}
+  .eyebrow::before{content:"";width:16px;height:1px;background:var(--line);flex:none}
+
+  label.fld{display:block;margin-bottom:16px}
+  label.fld:last-child{margin-bottom:0}
+  .lab{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px}
+  .lab .name{font-weight:600;font-size:14px}
+  .lab .hint{font-family:var(--mono);font-size:11px;color:var(--muted-2)}
+  .inputwrap{position:relative}
+  input[type=number],input[type=text],input[type=password]{
+    width:100%;background:var(--panel-2);border:1px solid var(--line);color:var(--ink);
+    border-radius:10px;padding:12px 14px;font-family:var(--mono);font-size:15px;outline:none;
+    transition:border-color .15s,box-shadow .15s}
+  .inputwrap input{padding-right:46px;font-size:19px;font-weight:500;letter-spacing:.5px}
+  input::placeholder{color:var(--muted-2)}
+  input:focus{border-color:#37c3d1;box-shadow:0 0 0 3px rgba(55,195,209,.16)}
+  .inputwrap .unit{position:absolute;right:14px;top:50%;transform:translateY(-50%);
+    font-family:var(--mono);font-size:12px;color:var(--muted);pointer-events:none}
+
+  select{width:100%;appearance:none;background:var(--panel-2);border:1px solid var(--line);color:var(--ink);
+    border-radius:10px;padding:12px 34px 12px 12px;font-family:var(--mono);font-size:14px;outline:none;cursor:pointer;
+    background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);
+    background-position:calc(100% - 17px) 53%,calc(100% - 12px) 53%;background-size:5px 5px,5px 5px;background-repeat:no-repeat}
+  select:focus{border-color:#37c3d1}
+  .catline{font-family:var(--mono);font-size:11px;color:var(--muted-2);margin-top:8px;line-height:1.6}
+
+  .res{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .res .box{background:var(--panel-2);border:1px solid var(--line-soft);border-radius:11px;padding:12px 13px}
+  .res .box .k{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted-2);margin-bottom:5px}
+  .res .box .v{font-family:var(--mono);font-size:23px;font-weight:600;letter-spacing:.5px}
+  .res .box .v small{font-size:12px;color:var(--muted);font-weight:400}
+  .delta{font-family:var(--mono);font-size:12px;margin-top:4px;font-weight:500}
+  .delta.zero{color:var(--ok)} .delta.off{color:var(--signal)}
+
+  .altblock{margin-top:16px}
+  .altblock h4{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--muted-2);font-weight:500;margin:0 0 8px}
+  .chips{display:flex;gap:7px;flex-wrap:wrap}
+  .chip{font-family:var(--mono);font-size:12px;border:1px solid var(--line);background:var(--panel-2);color:var(--muted);
+    border-radius:8px;padding:6px 9px;cursor:pointer;transition:.13s;display:flex;flex-direction:column;gap:1px;min-width:64px}
+  .chip:hover{border-color:var(--muted-2);color:var(--ink)}
+  .chip .m{color:var(--ink);font-weight:600;font-size:12.5px}
+  .chip .d{font-size:10px;opacity:.75}
+  .chip.on{border-color:#37c3d1;background:rgba(55,195,209,.12);color:var(--ink)}
+  .chip.on .m{color:#37c3d1}
+  .chip.closest .d::after{content:" · vicina"}
+
+  .stage{background:
+      radial-gradient(120% 120% at 50% 0%, rgba(255,255,255,.02), transparent 60%),
+      repeating-linear-gradient(0deg, rgba(255,255,255,.018) 0 1px, transparent 1px 22px),
+      repeating-linear-gradient(90deg, rgba(255,255,255,.018) 0 1px, transparent 1px 22px),
+      var(--panel-2);
+    border:1px solid var(--line-soft);border-radius:12px;min-height:360px;
+    display:flex;align-items:center;justify-content:center;padding:10px;overflow:hidden}
+  .stage svg{max-width:100%;height:auto;display:block}
+  @keyframes fadein{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .stage svg.anim{animation:fadein .28s ease}
+  .empty{color:var(--muted-2);font-family:var(--mono);font-size:13px;text-align:center;padding:40px 20px;line-height:1.7}
+  .empty b{color:var(--muted);display:block;font-size:14px;margin-bottom:6px}
+
+  .cabtxt{font-family:var(--mono);fill:rgba(255,255,255,.92);font-size:14px;font-weight:600}
+  .dimline{stroke:var(--ruler);stroke-width:1}
+  .dimtick{stroke:var(--ruler);stroke-width:1}
+  .dimtick.sub{stroke:rgba(84,98,111,.5)}
+  .dimlbl{font-family:var(--mono);fill:var(--ink);font-size:15px;font-weight:600}
+  .reqguide{stroke:var(--signal);stroke-width:1.2;stroke-dasharray:3 3}
+  .reqlbl{font-family:var(--mono);fill:var(--signal);font-size:13px;font-weight:600}
+  .badcell{fill:none;stroke:var(--danger);stroke-width:1.4;stroke-dasharray:4 3}
+
+  .metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}
+  @media(max-width:560px){.metrics{grid-template-columns:repeat(2,1fr)}}
+  .metric{background:var(--panel-2);border:1px solid var(--line-soft);border-radius:10px;padding:11px 12px}
+  .metric .k{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted-2);margin-bottom:5px}
+  .metric .v{font-family:var(--mono);font-size:17px;font-weight:600}
+  .metric .v small{font-size:11px;color:var(--muted);font-weight:400}
+  .metric.ratio169 .v{color:var(--ok)}
+
+  .suggest{margin-top:12px;display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .suggest .lbl{font-family:var(--mono);font-size:11px;color:var(--muted-2)}
+  .suggest button{font-family:var(--mono);font-size:12px;border:1px solid rgba(95,211,154,.4);
+    background:rgba(95,211,154,.10);color:#9ae3bd;border-radius:8px;padding:6px 11px;cursor:pointer;transition:.13s}
+  .suggest button:hover{background:rgba(95,211,154,.18)}
+
+  .altwall{width:100%;text-align:left;display:block;background:var(--panel-2);border:1px solid var(--line-soft);
+    border-radius:11px;padding:11px 13px;cursor:pointer;transition:.13s;margin-bottom:8px}
+  .altwall:hover{border-color:var(--muted-2)}
+  .altwall:focus-visible{outline:none;border-color:#37c3d1;box-shadow:0 0 0 2px rgba(55,195,209,.55)}
+  .altwall.cur{border-color:#37c3d1;background:rgba(55,195,209,.08)}
+  .altwall .mix{font-family:var(--mono);font-size:14.5px;font-weight:600;color:var(--ink);
+    display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+  .altwall .badge{font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:#37c3d1;font-weight:600;white-space:nowrap}
+  .altwall .badge.uni{color:var(--ok)}
+  .altwall .altmarks{margin-left:8px;white-space:nowrap}
+  .altwall .altmarks .mk{font-size:39px;line-height:1;margin-left:8px;vertical-align:-8px;display:inline-block}
+  .altwall .altmarks .star{color:#f4c430}
+  .altwall .altmarks .heart{color:#e2494a}
+  .altwall .meta{font-family:var(--mono);font-size:12.5px;color:var(--muted);margin-top:5px}
+  .altwall .meta .off{color:var(--signal)} .altwall .meta .ok{color:var(--ok)}
+  .altwall .meta .altprice{font-size:19px;font-weight:600;color:#8fe0b8;letter-spacing:.3px}
+  .altwall .meta .w2{color:var(--signal)}
+
+  .bomrow{display:flex;align-items:center;gap:11px;padding:9px 4px;border-top:1px solid var(--line-soft)}
+  .bomrow:first-of-type{border-top:none}
+  .sw{width:22px;height:16px;border-radius:4px;flex:none;box-shadow:0 0 0 1px rgba(0,0,0,.35) inset}
+  .bomrow .nm{font-family:var(--mono);font-size:13px}
+  .bomrow .dim{color:var(--muted);font-size:12px;margin-left:2px}
+  .bomrow .ct{margin-left:auto;font-family:var(--mono);font-size:14px;font-weight:600;white-space:nowrap}
+  .bomrow .ct small{color:var(--muted);font-weight:400}
+  .bomrow .sub{font-family:var(--mono);font-size:12.5px;color:var(--muted);min-width:78px;text-align:right}
+  .bomtot{display:flex;justify-content:space-between;margin-top:12px;padding-top:12px;border-top:1px solid var(--line);font-family:var(--mono);font-size:13px}
+  .bomtot b{font-size:15px}
+  .strategy{font-family:var(--mono);font-size:11px;color:var(--muted-2);margin-top:10px;line-height:1.55}
+
+  .spec{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+  @media(max-width:560px){.spec{grid-template-columns:1fr}}
+  .spec .box{background:var(--panel-2);border:1px solid var(--line-soft);border-radius:11px;padding:13px}
+  .spec .box .k{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted-2);margin-bottom:6px}
+  .spec .box .v{font-family:var(--mono);font-size:20px;font-weight:600}
+  .spec .box .v small{font-size:11px;color:var(--muted);font-weight:400}
+  .spec .box.price{grid-column:1 / -1}
+  .spec .box.price .v{color:#8fe0b8;font-size:34px;letter-spacing:.5px}
+  .spec .box.price .v small{font-size:15px}
+  .partial{font-family:var(--mono);font-size:10px;color:var(--signal);margin-top:4px}
+
+  .warn{margin-top:14px;background:rgba(232,105,95,.09);border:1px solid rgba(232,105,95,.35);
+    border-radius:10px;padding:11px 13px;font-family:var(--mono);font-size:11.5px;color:#f0a59d;line-height:1.6}
+  .note{color:var(--signal);font-family:var(--mono);font-size:11.5px;margin-top:10px}
+  .foot{margin-top:26px;color:var(--muted-2);font-size:12px;font-family:var(--mono);text-align:center}
+
+  /* ---- Modal admin ---- */
+  .overlay{position:fixed;inset:0;background:rgba(8,11,15,.72);backdrop-filter:blur(3px);
+    display:none;align-items:flex-start;justify-content:center;padding:40px 16px;z-index:50;overflow:auto}
+  .overlay.show{display:flex}
+  .modal{width:100%;max-width:700px;background:linear-gradient(180deg,var(--panel),var(--panel-2));
+    border:1px solid var(--line);border-radius:16px;padding:24px;box-shadow:0 30px 80px -20px rgba(0,0,0,.7)}
+  .modal h2{font-size:18px;margin:0 0 4px}
+  .modal .sub{color:var(--muted);font-size:13px;margin:0 0 20px}
+  .modal .x{float:right;background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;line-height:1;margin:-6px -6px 0 0}
+  .modal .x:hover{color:var(--ink)}
+  .lockrow{display:flex;gap:10px;margin-top:14px}
+  .lockrow input{flex:1}
+  .btn{font-family:var(--disp);font-weight:600;font-size:14px;border-radius:10px;padding:12px 18px;cursor:pointer;border:1px solid transparent;transition:.14s}
+  .btn.primary{background:#37c3d1;color:#08252a;border-color:#37c3d1}
+  .btn.primary:hover{background:#54d3df}
+  .btn.ghost{background:var(--panel-2);border-color:var(--line);color:var(--ink)}
+  .btn.ghost:hover{border-color:var(--muted-2)}
+  .btn.sm{padding:8px 12px;font-size:12.5px}
+  .btn.danger{background:transparent;border-color:rgba(232,105,95,.4);color:var(--danger)}
+  .btn.danger:hover{background:rgba(232,105,95,.12)}
+  .err{color:var(--danger);font-family:var(--mono);font-size:12px;margin-top:10px;min-height:16px}
+
+  .prod{border:1px solid var(--line);border-radius:12px;padding:15px;margin-bottom:14px;background:var(--panel-2)}
+  .prod .phead{display:flex;gap:10px;align-items:center;margin-bottom:12px}
+  .prod .phead input{flex:1;font-family:var(--disp);font-size:15px;font-weight:600}
+
+  .cabcard{border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:9px;background:var(--panel)}
+  .cabcard-head{display:flex;align-items:center;gap:9px;margin-bottom:11px}
+  .cabcard-head .dot{width:14px;height:14px;border-radius:3px;flex:none}
+  .cabcard-head .cdim{font-family:var(--mono);font-size:14px;font-weight:600}
+  .cabcard-head .adddim{display:flex;align-items:center;gap:6px}
+  .cabcard-head .adddim input{width:78px;text-align:center;padding:8px;font-size:13px}
+  .cabcard-head .times{color:var(--muted-2);font-family:var(--mono)}
+  .cabcard-head .rm{margin-left:auto;background:none;border:none;color:var(--muted-2);cursor:pointer;font-size:17px;line-height:1}
+  .cabcard-head .rm:hover{color:var(--danger)}
+  .cabgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+  @media(max-width:560px){.cabgrid{grid-template-columns:repeat(2,1fr)}}
+  .ffield{display:flex;flex-direction:column;gap:4px}
+  .ffield label{font-family:var(--mono);font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2)}
+  .ffield input{padding:8px;font-size:12.5px}
+  .cabcard-foot{margin-top:11px;display:flex;justify-content:flex-end}
+
+  .previewhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:10px}
+  .modtoggle{font-family:var(--mono);font-size:11.5px;border:1px solid var(--line);background:var(--panel-2);
+    color:var(--muted);border-radius:8px;padding:6px 11px;cursor:pointer;transition:.13s}
+  .modtoggle:hover{border-color:var(--muted-2);color:var(--ink)}
+  .modtoggle[aria-pressed="true"]{border-color:#37c3d1;background:rgba(55,195,209,.12);color:#37c3d1}
+
+  .pmod{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;color:var(--muted-2)}
+  .pmod input{width:66px;text-align:center;padding:8px;font-size:12.5px}
+  .pmod .times{color:var(--muted-2)}
+
+  .ffield.color{gap:6px}
+  .ffield.color .crow{display:flex;align-items:center;gap:8px}
+  .ffield.color input[type=color]{width:38px;height:32px;padding:2px;border-radius:8px;background:var(--panel-2);border:1px solid var(--line);cursor:pointer}
+  .ffield.color .auto{background:none;border:none;color:var(--muted-2);font-family:var(--mono);font-size:11px;cursor:pointer;text-decoration:underline}
+  .ffield.color .auto:hover{color:var(--ink)}
+
+  .resblock{border:1px dashed var(--line);border-radius:10px;padding:12px;margin-bottom:11px}
+  .resblock .reshdr{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted-2);margin-bottom:10px}
+  .resrow{display:grid;grid-template-columns:1fr 96px 26px;gap:8px;align-items:center;margin-bottom:7px}
+  .resrow input{padding:8px;font-size:12.5px}
+  .resrow .rm{background:none;border:none;color:var(--muted-2);cursor:pointer;font-size:16px;line-height:1}
+  .resrow .rm:hover{color:var(--danger)}
+  .resadd{display:grid;grid-template-columns:1fr 96px auto;gap:8px;margin-top:9px}
+  .resadd input{padding:8px;font-size:12.5px}
+  .resempty{font-family:var(--mono);font-size:11.5px;color:var(--muted-2);margin-bottom:8px}
+  .pdesc{margin:2px 0 12px}
+  .pdesc label{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.03em;text-transform:uppercase;color:var(--muted-2);margin-bottom:5px}
+  .pdesc input{width:100%;padding:9px 11px;font-size:13px}
+
+  .pcrow{display:grid;grid-template-columns:74px 90px 1fr;gap:8px;align-items:center;margin-bottom:7px}
+  .pcrow .pclab{font-family:var(--mono);font-size:12px;color:var(--muted)}
+  .pcrow input{padding:8px;font-size:12.5px}
+  @media(max-width:560px){.pcrow{grid-template-columns:60px 1fr 1fr}}
+
+  .odoobar{margin-top:14px;padding-top:14px;border-top:1px solid var(--line);display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .offobj{margin-bottom:2px}
+  .offobj label{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.03em;text-transform:uppercase;color:var(--muted-2);margin-bottom:6px}
+  .offobj input{width:100%;padding:11px 13px;font-size:14px;font-family:var(--mono)}
+  .odoostatus{font-family:var(--mono);font-size:11.5px;margin-top:9px;line-height:1.5}
+  .odoostatus a{color:#37c3d1}
+  .odoostatus.ok{color:var(--ok)} .odoostatus.err{color:var(--danger)} .odoostatus.wait{color:var(--muted)}
+
+  .ctrlhint{font-family:var(--mono);font-size:12px;color:var(--ink);margin-bottom:12px}
+  .ctrlhint.muted{color:var(--muted-2)}
+  .ctrlhint b{color:#37c3d1}
+  .ctrlsub{font-family:var(--mono);font-size:10.5px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin:12px 0 7px}
+  .ctrlsub.muted{color:var(--muted-2)}
+  .ctrlrow{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px;background:var(--panel-2)}
+  .ctrlrow.sel{border-color:#2f8f9a;background:rgba(55,195,209,.07)}
+  .ctrlrow.ko{opacity:.6}
+  .ctrlpick{flex:0 0 auto;padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--ink);font-family:var(--mono);font-size:11.5px;cursor:pointer;white-space:nowrap;transition:.15s}
+  .ctrlpick:hover{border-color:#37c3d1}
+  .ctrlpick.on{background:#2f8f9a;border-color:#2f8f9a;color:#fff}
+  .ctrlinfo{flex:1;min-width:0}
+  .ctrlname{font-weight:600;font-size:13.5px}
+  .ctrlcap{font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:2px}
+  .ctrlwarn{font-family:var(--mono);font-size:10px;color:var(--danger);border:1px solid var(--danger);border-radius:5px;padding:1px 5px;margin-left:6px;font-weight:400}
+  .ctrlright{display:flex;align-items:center;gap:10px;flex:0 0 auto}
+  .ctrlqty{width:56px;padding:6px 8px;font-size:12.5px;text-align:center}
+  .ctrlprice{font-family:var(--mono);font-size:12.5px;color:var(--ink)}
+  .ctrlnone{font-family:var(--mono);font-size:12px;color:var(--muted);padding:6px 0}
+
+  .cadmrow{display:grid;grid-template-columns:1.2fr .9fr .8fr .8fr .6fr .9fr .5fr .8fr 1fr auto;gap:7px;align-items:center;padding:9px;border:1px solid var(--line);border-radius:9px;margin-bottom:7px;background:var(--panel-2)}
+  .cadmrow input{padding:7px 8px;font-size:12px}
+  .cadmrow .rm{flex:0 0 auto}
+  .cadd-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}
+  .cadd-grid label{font-family:var(--mono);font-size:10px;color:var(--muted-2);display:block;margin-bottom:3px;text-transform:uppercase;letter-spacing:.5px}
+  .cadd-grid input{padding:8px;font-size:12.5px;width:100%}
+  .ctrladd{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+  .add-title{font-family:var(--mono);font-size:11px;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);margin-bottom:9px}
+  .cadmhead{font-family:var(--mono);font-size:10px;letter-spacing:.5px;text-transform:uppercase;color:var(--muted-2);display:grid;grid-template-columns:1.2fr .9fr .8fr .8fr .6fr .9fr .5fr .8fr 1fr auto;gap:7px;padding:0 9px 4px}
+  @media(max-width:760px){ .cadmrow,.cadmhead{grid-template-columns:1fr 1fr 1fr;}.cadmhead{display:none} }
+
+  .adminsec{border-top:1px solid var(--line);margin-top:22px;padding-top:20px}
+  .adminsec h3{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted-2);margin:0 0 14px}
+  .rowbtns{display:flex;gap:10px;flex-wrap:wrap}
+  .hidden{display:none!important}
+  input[type=file]{display:none}
+
+  :focus-visible{outline:2px solid #37c3d1;outline-offset:2px}
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <div class="logo" aria-hidden="true"></div>
+      <div><b>NSELED</b> <span>Europe</span><h1>Configuratore parete LED</h1></div>
+    </div>
+    <span class="spacer"></span>
+    <button class="adminbtn" id="openAdmin">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+      Amministrazione
+    </button>
+  </header>
+
+  <div class="grid">
+    <!-- CONTROLLI -->
+    <div>
+      <section class="card">
+        <p class="eyebrow">Prodotto e misura</p>
+        <label class="fld">
+          <span class="lab"><span class="name">Prodotto</span></span>
+          <select id="inProduct"></select>
+          <div class="catline" id="catLine"></div>
+        </label>
+        <label class="fld">
+          <span class="lab"><span class="name">Base</span><span class="hint" id="hintW">—</span></span>
+          <span class="inputwrap"><input id="inBase" type="number" inputmode="numeric" placeholder="es. 2500" min="0" step="10"><span class="unit">mm</span></span>
+        </label>
+        <label class="fld">
+          <span class="lab"><span class="name">Altezza</span><span class="hint" id="hintH">—</span></span>
+          <span class="inputwrap"><input id="inHeight" type="number" inputmode="numeric" placeholder="es. 1500" min="0" step="10"><span class="unit">mm</span></span>
+        </label>
+        <label class="fld">
+          <span class="lab"><span class="hint">Risoluzione (opzionale)</span></span>
+          <select id="inPitch"><option value="0">— nessuna</option></select>
+        </label>
+      </section>
+
+      <section class="card" id="resultCard" hidden>
+        <p class="eyebrow">Misura realizzabile</p>
+        <div class="res">
+          <div class="box"><div class="k">Base</div><div class="v" id="resBase">—</div><div class="delta" id="dBase"></div></div>
+          <div class="box"><div class="k">Altezza</div><div class="v" id="resHeight">—</div><div class="delta" id="dHeight"></div></div>
+        </div>
+        <div class="altblock"><h4>Alternative base</h4><div class="chips" id="altBase"></div></div>
+        <div class="altblock"><h4>Alternative altezza</h4><div class="chips" id="altHeight"></div></div>
+        <div class="note" id="minNote" hidden></div>
+      </section>
+    </div>
+
+    <!-- PREVIEW -->
+    <div>
+      <section class="card previewcard">
+        <div class="previewhead">
+          <p class="eyebrow" style="margin:0">Anteprima in scala</p>
+          <button class="modtoggle" id="modToggle" hidden aria-pressed="true">Moduli: on</button>
+        </div>
+        <div class="stage" id="stage">
+          <div class="empty"><b>Nessuna configurazione</b>Scegli un prodotto e inserisci base e altezza</div>
+        </div>
+        <div class="metrics" id="metrics" hidden>
+          <div class="metric"><div class="k">Dimensione</div><div class="v" id="mSize">—</div></div>
+          <div class="metric" id="mRatioBox"><div class="k">Proporzione</div><div class="v" id="mRatio">—</div></div>
+          <div class="metric"><div class="k">Superficie</div><div class="v" id="mArea">—</div></div>
+          <div class="metric"><div class="k">Cabinet</div><div class="v" id="mMods">—</div></div>
+          <div class="metric"><div class="k">Moduli</div><div class="v" id="mModules">—</div></div>
+          <div class="metric"><div class="k">Risoluzione</div><div class="v" id="mRes">—</div></div>
+        </div>
+        <div class="suggest" id="ratioSuggest" hidden></div>
+        <div class="warn" id="warnBox" hidden></div>
+      </section>
+
+      <section class="card" id="altCard" hidden>
+        <p class="eyebrow">Alternative di composizione</p>
+        <div id="altList"></div>
+        <div class="strategy">Modi diversi di comporre la parete vicino alla misura richiesta. Le opzioni a cabinet tutti uguali semplificano montaggio, ricambi e magazzino.</div>
+      </section>
+
+      <section class="card" id="bomCard" hidden>
+        <p class="eyebrow">Distinta cabinet</p>
+        <div id="bomList"></div>
+        <div class="bomtot"><span>Totale cabinet</span><b id="bomTotal">0</b></div>
+        <div class="strategy">Composizione predefinita: cabinet più grandi e uniformi possibile, per ridurre pezzi e costo.</div>
+      </section>
+
+      <section class="card" id="specCard" hidden>
+        <p class="eyebrow">Specifiche &amp; preventivo</p>
+        <div class="spec">
+          <div class="box"><div class="k">Peso totale</div><div class="v" id="tWeight">—</div><div class="partial" id="pWeight" hidden>dati parziali</div></div>
+          <div class="box"><div class="k">Assorbimento</div><div class="v" id="tPower">—</div><div class="partial" id="pPower" hidden>dati parziali</div></div>
+          <div class="box"><div class="k">Moduli totali</div><div class="v" id="tModules">—</div><div class="partial" id="pModules" hidden>dati parziali</div></div>
+          <div class="box price"><div class="k">Prezzo totale</div><div class="v" id="tPrice">—</div><div class="partial" id="pPrice" hidden>dati parziali</div></div>
+        </div>
+      </section>
+
+      <section class="card" id="ctrlCard" hidden>
+        <p class="eyebrow">Controller consigliati</p>
+        <div id="ctrlHint" class="ctrlhint"></div>
+        <div id="ctrlList"></div>
+        <div class="strategy">Compatibilità sui pixel della parete: il controller deve reggere pixel totali, base e altezza. Seleziona quelli da includere nel preventivo.</div>
+      </section>
+
+      <section class="card" id="offerCard" hidden>
+        <p class="eyebrow">Invio offerta</p>
+        <div class="offobj">
+          <label for="odooObject">Oggetto preventivo</label>
+          <input type="text" id="odooObject" placeholder="es. Fornitura parete LED — Cliente XYZ">
+        </div>
+        <div class="odoobar">
+          <button class="btn ghost sm" id="odooExport">Esporta offerta (JSON)</button>
+          <button class="btn primary sm" id="odooSend">Invia a Odoo</button>
+        </div>
+        <div class="odoostatus" id="odooStatus"></div>
+      </section>
+    </div>
+  </div>
+
+  <p class="foot">Le misure si compongono con i cabinet definiti per ciascun prodotto — larghezza × altezza in mm<br><span id="srcNote"></span></p>
+</div>
+
+<!-- ===== MODALE AMMINISTRAZIONE ===== -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <button class="x" id="closeAdmin" aria-label="Chiudi">×</button>
+
+    <div id="lockView">
+      <h2>Area amministrazione</h2>
+      <p class="sub">Inserisci la password per gestire prodotti e cabinet.</p>
+      <div class="lockrow">
+        <input id="pwInput" type="password" placeholder="Password" autocomplete="off">
+        <button class="btn primary" id="pwEnter">Entra</button>
+      </div>
+      <div class="err" id="pwErr"></div>
+    </div>
+
+    <div id="panelView" class="hidden">
+      <h2>Prodotti &amp; cabinet</h2>
+      <p class="sub">Definisci i cabinet (larghezza × altezza in mm). Peso, assorbimento, prezzo e moduli (dimensione + numero per cabinet) sono opzionali e alimentano i totali della parete.</p>
+
+      <div id="prodList"></div>
+
+      <div class="rowbtns">
+        <input id="newProdName" type="text" placeholder="Nome nuovo prodotto" style="flex:1;min-width:180px">
+        <button class="btn ghost sm" id="addProd">+ Prodotto</button>
+      </div>
+
+      <div class="adminsec">
+        <h3>Controller</h3>
+        <p class="sub" style="margin:0 0 12px">Controller/processori per pilotare le pareti. Il configuratore propone quelli compatibili con i pixel della parete. Prezzo e <b>codice Odoo</b> (Riferimento interno) servono per il preventivo.</p>
+        <div id="ctrlAdminList"></div>
+        <div class="ctrladd">
+          <div class="add-title">+ Aggiungi controller</div>
+          <div class="cadd-grid">
+            <div><label>Modello</label><input id="c-mod" placeholder="es. HD-A9"></div>
+            <div><label>Max px totali</label><input type="number" id="c-tot" placeholder="2600000"></div>
+            <div><label>Max px base</label><input type="number" id="c-base" placeholder="16384"></div>
+            <div><label>Max px alt.</label><input type="number" id="c-ht" placeholder="4096"></div>
+            <div><label>Porte</label><input type="number" id="c-ports" placeholder="4"></div>
+            <div><label>Max res/porta</label><input type="number" id="c-rp" placeholder="655350"></div>
+            <div><label>4K</label><input id="c-k4" placeholder="SI"></div>
+            <div><label>Prezzo €</label><input type="number" id="c-price" placeholder="—"></div>
+            <div><label>Codice Odoo</label><input id="c-code" placeholder="—"></div>
+          </div>
+          <div class="rowbtns" style="margin-top:10px">
+            <button class="btn ghost sm" id="addCtrl">Aggiungi controller</button>
+            <button class="btn ghost sm" id="seedHuidu">Aggiungi modelli Huidu</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="adminsec">
+        <h3>Sicurezza</h3>
+        <div class="rowbtns">
+          <input id="newPw" type="password" placeholder="Nuova password" style="flex:1;min-width:180px">
+          <button class="btn ghost sm" id="changePw">Aggiorna password</button>
+        </div>
+        <div class="err" id="pwOk" style="color:var(--ok)"></div>
+      </div>
+
+      <div class="adminsec">
+        <h3>Pubblicazione catalogo</h3>
+        <p class="sub" style="margin:0 0 12px"><b>Salva sul sito</b> rende subito attive per tutti le modifiche, senza passare da GitHub (richiede il token impostato su Netlify). In alternativa puoi esportare <b>catalog.json</b> e caricarlo manualmente.</p>
+        <div class="rowbtns">
+          <button class="btn primary sm" id="cloudSaveBtn">Salva sul sito (tutti)</button>
+          <button class="btn ghost sm" id="exportBtn">Esporta catalog.json</button>
+          <button class="btn ghost sm" id="importBtn">Importa JSON</button>
+          <input type="file" id="importFile" accept="application/json">
+        </div>
+        <div class="odoostatus" id="cloudSaveMsg"></div>
+      </div>
+
+      <div class="adminsec" style="display:flex;justify-content:flex-end;gap:10px">
+        <button class="btn ghost" id="panelClose">Chiudi</button>
+        <button class="btn primary" id="panelSave">Salva in questo browser</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  const $ = id => document.getElementById(id);
+  const STORE_KEY = "nseled_led_config_v2";
+
+  const DEFAULTS = {
+    password: "nseled2026",
+    products: [
+      { id:"p_std", name:"NSELED — Serie standard", modW:320, modH:160,
+        resolutions:[{id:"s25",label:"P2.5",pitch:2.5},{id:"s39",label:"P3.9",pitch:3.9},{id:"s4",label:"P4",pitch:4}],
+        cabinets:[
+        {w:640,h:320},{w:640,h:480},{w:640,h:640},
+        {w:960,h:320},{w:960,h:480},{w:960,h:640}
+      ]},
+      { id:"p_500", name:"Esempio — Serie 500", modW:250, modH:250,
+        resolutions:[{id:"r19",label:"P1.9",pitch:1.9},{id:"r25",label:"P2.5",pitch:2.5}],
+        cabinets:[
+        {w:500,h:500,weight:8,power:130,modQty:4,prices:{r19:260,r25:210},codes:{r19:"OSO-500-P19",r25:"OSO-500-P25"}},
+        {w:500,h:250,weight:4,power:65,modQty:2,prices:{r19:150,r25:120},codes:{r19:"OSO-250-P19",r25:"OSO-250-P25"}}
+      ]}
+    ],
+    controllers: [
+      { id:"hd_a3l", model:"HD-A3L", maxTotal:655350,  maxBase:8192,  maxHeight:2560, ports:1, maxResPort:655350, k4:"SI" },
+      { id:"hd_a4l", model:"HD-A4L", maxTotal:655350,  maxBase:16384, maxHeight:4096, ports:2, maxResPort:655350, k4:"SI" },
+      { id:"hd_a5l", model:"HD-A5L", maxTotal:1300000, maxBase:16384, maxHeight:4096, ports:2, maxResPort:655350, k4:"SI" },
+      { id:"hd_a6l", model:"HD-A6L", maxTotal:2600000, maxBase:16384, maxHeight:4096, ports:4, maxResPort:576000, k4:"SI" },
+      { id:"hd_a7",  model:"HD-A7",  maxTotal:5160000, maxBase:15360, maxHeight:4096, ports:8, maxResPort:655350, k4:"-" },
+      { id:"hd_a8",  model:"HD-A8",  maxTotal:8294400, maxBase:16384, maxHeight:4096, ports:8, maxResPort:655350, k4:"-" }
+    ]
+  };
+  const HUIDU_SEED = JSON.parse(JSON.stringify(DEFAULTS.controllers));
+
+  const rid=()=>"r_"+Math.random().toString(36).slice(2,9);
+  let DB;
+  function migrate(){
+    // porta la misura modulo dal cabinet al prodotto (retrocompatibilità)
+    (DB.products||[]).forEach(p=>{
+      if((p.modW===undefined||p.modH===undefined) && Array.isArray(p.cabinets)){
+        const src=p.cabinets.find(c=>c.modW>0&&c.modH>0);
+        if(src){ p.modW=src.modW; p.modH=src.modH; }
+      }
+      (p.cabinets||[]).forEach(c=>{ delete c.modW; delete c.modH; });
+      (p.resolutions||[]).forEach(r=>{ if(!r.id) r.id=rid(); });
+    });
+    if(!Array.isArray(DB.controllers)) DB.controllers=[];
+    DB.controllers.forEach(c=>{ if(!c.id) c.id="c_"+Math.random().toString(36).slice(2,9); });
+  }
+  function load(){ try{ const raw=localStorage.getItem(STORE_KEY); if(raw){ DB=JSON.parse(raw); migrate(); return; } }catch(e){} DB=JSON.parse(JSON.stringify(DEFAULTS)); migrate(); }
+  function save(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(DB)); }catch(e){} }
+  load();
+
+  let catalogSource="local";  // "site" quando caricato da catalog.json
+  function normPrices(pr){ if(!pr||typeof pr!=="object") return undefined; const o={}; Object.keys(pr).forEach(k=>{ if(pr[k]>0) o[k]=pr[k]; }); return Object.keys(o).length?o:undefined; }
+  function normCodes(cd){ if(!cd||typeof cd!=="object") return undefined; const o={}; Object.keys(cd).forEach(k=>{ if(typeof cd[k]==="string"&&cd[k].trim()) o[k]=cd[k].trim(); }); return Object.keys(o).length?o:undefined; }
+  function normControllers(arr){
+    if(!Array.isArray(arr)) return [];
+    return arr.filter(c=>c&&(c.model||c.name)).map(c=>({
+      id: c.id || ("c_"+Math.random().toString(36).slice(2,9)),
+      model: String(c.model||c.name||"Controller"),
+      maxTotal: (+c.maxTotal||+c.total||0),
+      maxBase: (+c.maxBase||+c.base||0),
+      maxHeight: (+c.maxHeight||+c.height||0),
+      ports: (+c.ports>0?+c.ports:undefined),
+      maxResPort: (+c.maxResPort>0?+c.maxResPort:(+c.resPort>0?+c.resPort:undefined)),
+      k4: (typeof c.k4==="string"&&c.k4.trim()?c.k4.trim():undefined),
+      price: (+c.price>0?+c.price:undefined),
+      code: (typeof c.code==="string"&&c.code.trim()?c.code.trim():undefined)
+    }));
+  }
+  function normalizeDB(j){
+    return {
+      password: (typeof j.password==="string" && j.password) ? j.password : DEFAULTS.password,
+      products: (Array.isArray(j.products)?j.products:[]).map(p=>{
+        const cabs=(p.cabinets||[]).filter(c=>c.w>0&&c.h>0);
+        let modW=(p.modW>0?p.modW:undefined), modH=(p.modH>0?p.modH:undefined);
+        if(!modW||!modH){ const s=cabs.find(c=>c.modW>0&&c.modH>0); if(s){ modW=modW||s.modW; modH=modH||s.modH; } }
+        return {
+          id:p.id||("p_"+Math.random().toString(36).slice(2)),
+          name:p.name||"Prodotto",
+          desc:(typeof p.desc==="string"?p.desc:undefined),
+          modW, modH,
+          resolutions:(Array.isArray(p.resolutions)?p.resolutions:[]).filter(r=>r&&r.pitch>0).map(r=>({id:r.id||rid(),label:(r.label||("P"+r.pitch)),pitch:r.pitch})),
+          cabinets:cabs.map(c=>({
+            w:c.w,h:c.h,
+            weight:(c.weight>0?c.weight:undefined),power:(c.power>0?c.power:undefined),
+            price:(c.price>0?c.price:undefined), prices:normPrices(c.prices),
+            code:(typeof c.code==="string"&&c.code.trim()?c.code.trim():undefined), codes:normCodes(c.codes),
+            modQty:(c.modQty>0?c.modQty:undefined),color:(typeof c.color==="string"?c.color:undefined)
+          }))
+        };
+      }),
+      controllers: normControllers(j.controllers)
+    };
+  }
+
+  // stato: le selezioni sono COMPOSIZIONI {total, counts}
+  const S = { productId:null, reqW:null, reqH:null, selWc:null, selHc:null, pitch:0, showModules:true, selCtrls:{} };
+  const R169 = 16/9;
+
+  const HUES=[265,190,330,150,95,300,45,220];  // famiglia colore per larghezza
+  function hslToHex(h,s,l){
+    s/=100; l/=100;
+    const k=n=>(n+h/30)%12, a=s*Math.min(l,1-l);
+    const f=n=>l-a*Math.max(-1,Math.min(k(n)-3,Math.min(9-k(n),1)));
+    const to=x=>Math.round(255*x).toString(16).padStart(2,"0");
+    return "#"+to(f(0))+to(f(8))+to(f(4));
+  }
+  function autoHex(product,w,h){
+    const ws=[...new Set(product.cabinets.map(c=>c.w))].sort((a,b)=>a-b);
+    const hs=[...new Set(product.cabinets.map(c=>c.h))].sort((a,b)=>a-b);
+    const wi=Math.max(0,ws.indexOf(w)), hi=Math.max(0,hs.indexOf(h));
+    const hue=HUES[wi%HUES.length];
+    const light = hs.length<=1 ? 50 : 40 + (hi/(hs.length-1))*20;
+    return hslToHex(hue,55,light);
+  }
+  function palette(product){
+    const map={};
+    product.cabinets.forEach(c=>{ map[c.w+"x"+c.h] = c.color || autoHex(product,c.w,c.h); });
+    return map;
+  }
+  function findCab(product,w,h){ return product.cabinets.find(c=>c.w===w&&c.h===h); }
+
+  function engine(units){
+    units=[...new Set(units)].filter(u=>u>0).sort((a,b)=>b-a);
+    function lexMax(S){
+      const fail=new Set(), res={};
+      function rec(i,rem){
+        if(rem===0) return true;
+        if(i>=units.length) return false;
+        const key=i+":"+rem; if(fail.has(key)) return false;
+        const u=units[i], maxc=Math.floor(rem/u);
+        for(let c=maxc;c>=0;c--){ if(rec(i+1,rem-c*u)){ res[u]=c; return true; } }
+        fail.add(key); return false;
+      }
+      return rec(0,S)?Object.assign({},res):null;
+    }
+    const pieces=dec=>dec?Object.values(dec).reduce((a,b)=>a+b,0):Infinity;
+    return {
+      units,
+      solve(target){
+        if(!units.length||target<=0) return null;
+        const bound=Math.min(Math.ceil(target)+units[0], 60000);
+        const ok=new Array(bound+1).fill(false); ok[0]=true;
+        for(let s=1;s<=bound;s++){ for(const u of units){ if(u<=s&&ok[s-u]){ ok[s]=true; break; } } }
+        const reach=[]; let bd=Infinity;
+        for(let v=1;v<=bound;v++){ if(ok[v]){ reach.push(v); const d=Math.abs(v-target); if(d<bd)bd=d; } }
+        let best=null,bestSum=null,bestPc=Infinity;
+        reach.filter(v=>Math.abs(v-target)===bd).forEach(v=>{ const dec=lexMax(v),pc=pieces(dec); if(pc<bestPc){bestPc=pc;best=dec;bestSum=v;} });
+        return {sum:bestSum,counts:best,pieces:bestPc,reach};
+      },
+      decompose(sum){ return lexMax(sum); }
+    };
+  }
+
+  // ---- griglia valida: ogni cella (larghezza colonna × altezza riga) deve essere un cabinet reale ----
+  // Restituisce {wComp,hComp} la cui area totale è più vicina a reqW×reqH usando SOLO cabinet esistenti.
+  function validGrid(product, reqW, reqH, eW, eH){
+    const widths=[...new Set(product.cabinets.map(c=>c.w))].filter(w=>w>0).sort((a,b)=>b-a);
+    const heights=[...new Set(product.cabinets.map(c=>c.h))].filter(h=>h>0).sort((a,b)=>b-a);
+    const exists=(w,h)=>!!findCab(product,w,h);
+    function axisComps(units, req, eng){
+      const set=new Map();
+      const add=cc=>{ const {total,counts}=cleanCounts(cc); if(total<=0) return; const usedU=Object.keys(counts).filter(k=>counts[k]>0).map(Number); const k=canon(counts); if(!set.has(k)) set.set(k,{total,counts,units:usedU}); };
+      const s=eng.solve(req); if(s&&s.counts) add(s.counts);
+      units.forEach(u=>{ const n=Math.max(1,Math.round(req/u)); [n-1,n,n+1,n+2].forEach(k=>{ if(k>=1) add({[u]:k}); }); });
+      for(let i=0;i<units.length;i++) for(let j=i;j<units.length;j++){
+        const a=units[i], b=units[j];
+        for(let ka=0;ka<=Math.ceil(req/a)+1;ka++){ const rem=req-ka*a; if(rem<0) break; const kb=Math.round(rem/b); if(kb>=0 && (ka+kb)>0) add({[a]:ka,[b]:kb}); }
+      }
+      return [...set.values()];
+    }
+    const wComps=axisComps(widths, reqW, eW);
+    const hComps=axisComps(heights, reqH, eH);
+    let best=null;
+    wComps.forEach(wc=>{
+      hComps.forEach(hc=>{
+        for(const w of wc.units){ for(const h of hc.units){ if(!exists(w,h)) return; } }
+        const dist=Math.abs(wc.total-reqW)+Math.abs(hc.total-reqH);
+        let cnt=0, types=0;
+        wc.units.forEach(w=>hc.units.forEach(h=>{ const q=(wc.counts[w]||0)*(hc.counts[h]||0); if(q){ cnt+=q; types++; } }));
+        const cand={wComp:{total:wc.total,counts:wc.counts}, hComp:{total:hc.total,counts:hc.counts}, dist, cnt, types};
+        if(!best){ best=cand; return; }
+        if(cand.dist<best.dist ||
+          (cand.dist===best.dist && cand.cnt<best.cnt) ||
+          (cand.dist===best.dist && cand.cnt===best.cnt && cand.types<best.types)) best=cand;
+      });
+    });
+    return best;
+  }
+
+  const cleanCounts=counts=>{ const c={}; let t=0; Object.keys(counts).forEach(k=>{const q=Math.round(counts[k]); if(q>0){c[k]=q; t+=Number(k)*q;}}); return {total:t,counts:c}; };
+  const canon=counts=>Object.keys(counts).filter(k=>counts[k]>0).map(Number).sort((a,b)=>a-b).map(k=>k+"x"+counts[k]).join(",");
+  // Ricompone la griglia valida quando UN asse è fissato a un totale scelto dall'utente.
+  // fixed = "w" oppure "h"; total = misura totale scelta su quell'asse.
+  // Ritorna {wComp,hComp} valida (solo cabinet reali) o null.
+  function validGridFixed(product, fixed, total, reqW, reqH, eW, eH){
+    const other = fixed==="w" ? "h" : "w";
+    const otherReq = other==="w" ? reqW : reqH;
+    const otherEng = other==="w" ? eW : eH;
+    const otherUnits=[...new Set(product.cabinets.map(c=> other==="w"?c.w:c.h))].filter(x=>x>0).sort((a,b)=>b-a);
+    const fixedUnits=[...new Set(product.cabinets.map(c=> fixed==="w"?c.w:c.h))].filter(x=>x>0).sort((a,b)=>b-a);
+    // composizioni dell'asse fissato che danno ESATTAMENTE il totale scelto
+    const fixedComps=(function(){
+      const set=new Map();
+      const add=cc=>{ const {total:t,counts}=cleanCounts(cc); if(t!==total) return; const uu=Object.keys(counts).filter(k=>counts[k]>0).map(Number); const k=canon(counts); if(!set.has(k)) set.set(k,{total:t,counts,units:uu}); };
+      const dec=otherEngFixed(fixed,eW,eH).decompose(total); if(dec) add(dec);
+      // enumerazione a 1-2 unità che danno il totale
+      for(let i=0;i<fixedUnits.length;i++){ const a=fixedUnits[i]; if(total%a===0) add({[a]:total/a});
+        for(let j=i;j<fixedUnits.length;j++){ const b=fixedUnits[j]; for(let ka=0;ka<=total/a;ka++){ const rem=total-ka*a; if(rem<0) break; if(rem%b===0){ const kb=rem/b; if(ka+kb>0) add({[a]:ka,[b]:kb}); } } }
+      }
+      return [...set.values()];
+    })();
+    // candidate per l'altro asse (vicino alla misura richiesta)
+    const otherComps=(function(){
+      const set=new Map();
+      const add=cc=>{ const {total:t,counts}=cleanCounts(cc); if(t<=0) return; const uu=Object.keys(counts).filter(k=>counts[k]>0).map(Number); const k=canon(counts); if(!set.has(k)) set.set(k,{total:t,counts,units:uu}); };
+      const s=otherEng.solve(otherReq); if(s&&s.counts) add(s.counts);
+      otherUnits.forEach(u=>{ const n=Math.max(1,Math.round(otherReq/u)); [n-1,n,n+1,n+2].forEach(k=>{ if(k>=1) add({[u]:k}); }); });
+      for(let i=0;i<otherUnits.length;i++) for(let j=i;j<otherUnits.length;j++){ const a=otherUnits[i],b=otherUnits[j]; for(let ka=0;ka<=Math.ceil(otherReq/a)+1;ka++){ const rem=otherReq-ka*a; if(rem<0) break; const kb=Math.round(rem/b); if(kb>=0&&ka+kb>0) add({[a]:ka,[b]:kb}); } }
+      return [...set.values()];
+    })();
+    const exists=(w,h)=>!!findCab(product,w,h);
+    let best=null;
+    fixedComps.forEach(fc=>otherComps.forEach(oc=>{
+      const wc = fixed==="w" ? fc : oc;
+      const hc = fixed==="w" ? oc : fc;
+      for(const w of wc.units){ for(const h of hc.units){ if(!exists(w,h)) return; } }
+      const dist=Math.abs(oc.total-otherReq);
+      let cnt=0,types=0; wc.units.forEach(w=>hc.units.forEach(h=>{ const q=(wc.counts[w]||0)*(hc.counts[h]||0); if(q){cnt+=q;types++;} }));
+      const cand={wComp:{total:wc.total,counts:wc.counts},hComp:{total:hc.total,counts:hc.counts},dist,cnt,types};
+      if(!best||cand.dist<best.dist||(cand.dist===best.dist&&cand.cnt<best.cnt)||(cand.dist===best.dist&&cand.cnt===best.cnt&&cand.types<best.types)) best=cand;
+    }));
+    return best;
+  }
+  function otherEngFixed(fixed,eW,eH){ return fixed==="w"?eW:eH; }
+  function primComp(eng,req){ const s=eng.solve(req); return {total:s.sum,counts:s.counts}; }
+  function compFromTotal(eng,total){ return {total, counts: eng.decompose(total)}; }
+  function expand(counts){ const a=[]; Object.keys(counts).map(Number).sort((x,y)=>y-x).forEach(k=>{ for(let i=0;i<counts[k];i++)a.push(k); }); return a; }
+
+  function currentProduct(){ return DB.products.find(p=>p.id===S.productId) || DB.products[0]; }
+  function priceOf(cab){
+    if(S.res && cab.prices && cab.prices[S.res.id]>0) return cab.prices[S.res.id];
+    if(cab.price>0) return cab.price;
+    return 0;
+  }
+  function codeOf(cab){
+    if(S.res && cab.codes && cab.codes[S.res.id]) return cab.codes[S.res.id];
+    if(cab.code) return cab.code;
+    return "";
+  }
+  function hasAnyPrice(product){
+    return product.cabinets.some(c=> c.price>0 || (c.prices && Object.values(c.prices).some(v=>v>0)) );
+  }
+  const ODOO_ENDPOINT="/.netlify/functions/odoo-quote";
+  function ctrlFits(c,px){
+    if(!px) return false;
+    const tot=px.base*px.h;
+    return (!c.maxTotal || tot<=c.maxTotal) && (!c.maxBase || px.base<=c.maxBase) && (!c.maxHeight || px.h<=c.maxHeight);
+  }
+  function currentPx(){
+    if(!(S.pitch>0)||!S.selWc||!S.selHc) return null;
+    return { base:Math.round(S.selWc.total/S.pitch), h:Math.round(S.selHc.total/S.pitch) };
+  }
+  function buildOffer(){
+    const p=currentProduct(); if(!p||!S.selWc||!S.selHc) return null;
+    const cols=expand(S.selWc.counts), rows=expand(S.selHc.counts);
+    const cw={};cols.forEach(w=>cw[w]=(cw[w]||0)+1);
+    const rh={};rows.forEach(h=>rh[h]=(rh[h]||0)+1);
+    const lines=[]; let totalPrice=0,totalCab=0,priceOk=true,codeOk=true;
+    Object.keys(cw).map(Number).sort((a,b)=>b-a).forEach(w=>Object.keys(rh).map(Number).sort((a,b)=>b-a).forEach(h=>{
+      const qty=cw[w]*rh[h]; if(!qty) return;
+      const cab=findCab(p,w,h); const price=cab?priceOf(cab):0; const code=cab?codeOf(cab):"";
+      if(!(price>0)) priceOk=false; if(!code) codeOk=false;
+      totalPrice+=qty*price; totalCab+=qty;
+      lines.push({code,label:w+"×"+h,w,h,qty,price_unit:Number((price||0).toFixed(2)),kind:"cabinet"});
+    }));
+    const controllers=[];
+    Object.keys(S.selCtrls||{}).forEach(id=>{
+      const qty=S.selCtrls[id]; if(!(qty>0)) return;
+      const ctrl=(DB.controllers||[]).find(c=>c.id===id); if(!ctrl) return;
+      const code=ctrl.code||""; if(!code) codeOk=false;
+      const price=ctrl.price||0; if(price>0) totalPrice+=qty*price;
+      const line={code,label:"Controller "+ctrl.model,qty,price_unit:Number((price||0).toFixed(2)),kind:"controller"};
+      lines.push(line); controllers.push(line);
+    });
+    const p2=currentProduct();
+    const objInput=$("odooObject"); const object=(objInput&&objInput.value.trim())||"";
+    const sizeStr=S.selWc.total+"×"+S.selHc.total+" mm";
+    const pitchStr=S.res?("Passo "+S.res.label):"";
+    const baseDesc=(p2&&p2.desc)?p2.desc.trim():"";
+    // testo per la riga sezione in cima all'offerta
+    const sectionText=[baseDesc||p.name, pitchStr, "dim. "+sizeStr].filter(Boolean).join(" · ");
+    return { product:p.name, object, product_desc:baseDesc, section:sectionText,
+      resolution:S.res?{label:S.res.label,pitch:S.res.pitch}:null,
+      size:{w:S.selWc.total,h:S.selHc.total},
+      lines, controllers, totals:{cabinets:totalCab,price:Number(totalPrice.toFixed(2))},
+      complete:{price:priceOk,code:codeOk}, generated_at:new Date().toISOString() };
+  }
+  function setOdoo(cls,html){ const el=$("odooStatus"); if(!el) return; el.className="odoostatus "+cls; el.innerHTML=html; }
+
+  // Genera un PNG "disegno tecnico" (fondo bianco, cabinet azzurri tenui, quote in mm) della parete.
+  function wallPreviewPng(){
+    try{
+      const p=currentProduct(); if(!p||!S.selWc||!S.selHc) return null;
+      const cols=expand(S.selWc.counts), rows=expand(S.selHc.counts);
+      const totW=S.selWc.total, totH=S.selHc.total;
+      const nC=cols.length, nR=rows.length;
+      // dimensioni immagine: lato lungo ~1200px + margini per le quote
+      const PADL=110, PADT=70, PADR=40, PADB=60;
+      const avail=1200;
+      const sc=Math.min((avail-PADL-PADR)/totW, (avail-PADT-PADB)/totH);
+      const gw=totW*sc, gh=totH*sc;
+      const W=Math.round(gw+PADL+PADR), H=Math.round(gh+PADT+PADB);
+      const cv=document.createElement("canvas"); cv.width=W; cv.height=H;
+      const x=cv.getContext("2d");
+      x.fillStyle="#ffffff"; x.fillRect(0,0,W,H);
+      // celle
+      const colX=[]; let cx=PADL; cols.forEach(w=>{ colX.push(cx); cx+=w*sc; });
+      const rowY=[]; let cy=PADT; rows.forEach(h=>{ rowY.push(cy); cy+=h*sc; });
+      x.lineWidth=1; x.strokeStyle="#1f3a5f"; x.fillStyle="#bcdcf2";
+      x.textAlign="center"; x.textBaseline="middle";
+      for(let r=0;r<nR;r++){ for(let c=0;c<nC;c++){
+        const cw=cols[c]*sc, ch=rows[r]*sc, px=colX[c], py=rowY[r];
+        x.fillStyle="#bcdcf2"; x.fillRect(px,py,cw,ch);
+        x.strokeStyle="#1f3a5f"; x.strokeRect(px+.5,py+.5,cw-1,ch-1);
+        if(cw>52&&ch>26){ x.fillStyle="#1f3a5f"; x.font="600 "+Math.max(11,Math.min(16,ch*0.28))+"px monospace";
+          x.fillText(cols[c]+"×"+rows[r], px+cw/2, py+ch/2); }
+      }}
+      // quota base (in alto)
+      x.strokeStyle="#111827"; x.fillStyle="#111827"; x.lineWidth=1;
+      const topY=PADT-24;
+      x.beginPath(); x.moveTo(PADL,topY); x.lineTo(PADL+gw,topY); x.stroke();
+      x.beginPath(); x.moveTo(PADL,topY-5); x.lineTo(PADL,topY+5); x.moveTo(PADL+gw,topY-5); x.lineTo(PADL+gw,topY+5); x.stroke();
+      x.font="bold 22px monospace"; x.fillText(totW+" mm", PADL+gw/2, topY-16);
+      // quota altezza (a sinistra, verticale)
+      const leftX=PADL-30;
+      x.beginPath(); x.moveTo(leftX,PADT); x.lineTo(leftX,PADT+gh); x.stroke();
+      x.beginPath(); x.moveTo(leftX-5,PADT); x.lineTo(leftX+5,PADT); x.moveTo(leftX-5,PADT+gh); x.lineTo(leftX+5,PADT+gh); x.stroke();
+      x.save(); x.translate(leftX-16, PADT+gh/2); x.rotate(-Math.PI/2); x.font="bold 22px monospace"; x.fillText(totH+" mm",0,0); x.restore();
+      return cv.toDataURL("image/png");
+    }catch(e){ return null; }
+  }
+
+  function fillProductSelect(){
+    const sel=$("inProduct"); sel.innerHTML="";
+    DB.products.forEach(p=>{ const o=document.createElement("option"); o.value=p.id; o.textContent=p.name; sel.appendChild(o); });
+    if(!DB.products.find(p=>p.id===S.productId)) S.productId = DB.products[0] ? DB.products[0].id : null;
+    sel.value=S.productId; updateCatLine();
+  }
+  function fillPitchSelect(){
+    const p=currentProduct(); const sel=$("inPitch"); const prev=sel.value;
+    sel.innerHTML="";
+    const none=document.createElement("option"); none.value=""; none.textContent="— nessuna"; sel.appendChild(none);
+    const res=(p&&Array.isArray(p.resolutions))?p.resolutions:[];
+    res.forEach(r=>{ const o=document.createElement("option"); o.value=r.id; o.dataset.label=r.label||("P"+r.pitch); o.textContent=(r.label||("P"+r.pitch))+" · pitch "+String(r.pitch).replace(".",",")+" mm"; sel.appendChild(o); });
+    if([...sel.options].some(o=>o.value===prev)) sel.value=prev;
+    else sel.value = res.length ? res[0].id : "";   // predefinita: prima risoluzione del modello
+  }
+  function updateCatLine(){
+    const p=currentProduct();
+    fillPitchSelect();
+    if(!p||!p.cabinets.length){ $("catLine").textContent="Nessun cabinet definito per questo prodotto."; $("hintW").textContent="—"; $("hintH").textContent="—"; return; }
+    let txt="Cabinet: "+p.cabinets.map(c=>c.w+"×"+c.h).join(" · ");
+    if(p.modW>0&&p.modH>0) txt+="  ·  Modulo "+p.modW+"×"+p.modH+" mm";
+    $("catLine").textContent=txt;
+    $("hintW").textContent="min "+Math.min(...p.cabinets.map(c=>c.w));
+    $("hintH").textContent="min "+Math.min(...p.cabinets.map(c=>c.h));
+  }
+
+  const fmt=n=>Math.round(n).toLocaleString("it-IT");
+  const eur=n=>"€ "+n.toLocaleString("it-IT",{minimumFractionDigits:2,maximumFractionDigits:2});
+  const signed=d=>(d>0?"+":(d<0?"−":"±"))+fmt(Math.abs(d));
+  function deltaStr(sel,req){ const d=Math.round(sel-req); return d===0?{cls:"zero",txt:"esatta"}:{cls:"off",txt:(d>0?"+":"")+fmt(d)+" mm"}; }
+  function gcd(a,b){ while(b){ [a,b]=[b,a%b]; } return a; }
+  function ratioLabel(w,h){ const g=gcd(w,h),a=w/g,b=h/g; return (Math.max(a,b)<=40)? a+":"+b : (w/h).toFixed(2).replace(".",",")+":1"; }
+
+  function render(){
+    const b=parseFloat($("inBase").value), h=parseFloat($("inHeight").value);
+    S.reqW=(isFinite(b)&&b>0)?b:null;
+    S.reqH=(isFinite(h)&&h>0)?h:null;
+    const selVal=$("inPitch").value;
+    const p0=currentProduct();
+    S.res = (selVal && p0 && Array.isArray(p0.resolutions)) ? (p0.resolutions.find(r=>r.id===selVal)||null) : null;
+    S.pitch = S.res ? S.res.pitch : 0;
+    S.pitchLabel = S.res ? S.res.label : "";
+
+    const p=currentProduct();
+    const has = p && p.cabinets.length && S.reqW!==null && S.reqH!==null;
+    ["resultCard","bomCard","metrics","specCard","altCard","ctrlCard","offerCard"].forEach(id=>$(id).hidden=!has);
+    const hasMod = p && p.modW>0 && p.modH>0;
+    $("modToggle").hidden = !(has && hasMod);
+    if(has && hasMod){ $("modToggle").setAttribute("aria-pressed", S.showModules?"true":"false"); $("modToggle").textContent = "Moduli: "+(S.showModules?"on":"off"); }
+    if(!has){ $("stage").innerHTML='<div class="empty"><b>Nessuna configurazione</b>Scegli un prodotto con cabinet e inserisci base e altezza</div>'; $("warnBox").hidden=true; $("ratioSuggest").hidden=true; return; }
+
+    const eW=engine(p.cabinets.map(c=>c.w)), eH=engine(p.cabinets.map(c=>c.h));
+    const solW0=eW.solve(S.reqW), solH0=eH.solve(S.reqH);
+    const reqKey=S.productId+"|"+S.reqW+"x"+S.reqH;
+    // la composizione corrente è ancora valida (tutte celle esistenti)?
+    const gridValid=(()=>{
+      if(!S.selWc||!S.selHc) return false;
+      const ws=Object.keys(S.selWc.counts).filter(k=>S.selWc.counts[k]>0).map(Number);
+      const hs=Object.keys(S.selHc.counts).filter(k=>S.selHc.counts[k]>0).map(Number);
+      for(const w of ws){ for(const h of hs){ if(!findCab(p,w,h)) return false; } }
+      return true;
+    })();
+    if(S.selKey!==reqKey || !S.selWc || !S.selHc || !gridValid){
+      // richiesta/prodotto cambiati, prima apertura, oppure griglia non più valida: ricomponi con soli cabinet reali
+      const vg=validGrid(p,S.reqW,S.reqH,eW,eH);
+      if(vg){ S.selWc={total:vg.wComp.total,counts:vg.wComp.counts}; S.selHc={total:vg.hComp.total,counts:vg.hComp.counts}; }
+      else { S.selWc={total:solW0.sum,counts:solW0.counts}; S.selHc={total:solH0.sum,counts:solH0.counts}; }
+      S.selKey=reqKey;
+    }
+    const totalW=S.selWc.total, totalH=S.selHc.total;
+
+    $("resBase").innerHTML=fmt(totalW)+' <small>mm</small>';
+    $("resHeight").innerHTML=fmt(totalH)+' <small>mm</small>';
+    const db=deltaStr(totalW,S.reqW), dh=deltaStr(totalH,S.reqH);
+    $("dBase").className="delta "+db.cls; $("dBase").textContent="Δ "+db.txt;
+    $("dHeight").className="delta "+dh.cls; $("dHeight").textContent="Δ "+dh.txt;
+
+    const minW=Math.min(...p.cabinets.map(c=>c.w)), minH=Math.min(...p.cabinets.map(c=>c.h)), note=[];
+    if(S.reqW<minW) note.push("Base minima: "+minW+" mm.");
+    if(S.reqH<minH) note.push("Altezza minima: "+minH+" mm.");
+    $("minNote").hidden=note.length===0; $("minNote").textContent=note.join(" ");
+
+    renderChips("w","altBase",S.reqW,S.selWc.total,solW0.reach,eW,eW,eH);
+    renderChips("h","altHeight",S.reqH,S.selHc.total,solH0.reach,eH,eW,eH);
+
+    const cols=expand(S.selWc.counts), rows=expand(S.selHc.counts);
+    renderWall(p,cols,rows,totalW,totalH);
+    renderMetrics(p,cols,rows,totalW,totalH);
+    renderRatioSuggest(eW,eH,totalW,totalH);
+    renderAltWalls(p,eW,eH,S.reqW,S.reqH);
+    renderControllers();
+  }
+
+  function renderControllers(){
+    const card=$("ctrlCard"), hint=$("ctrlHint"), host=$("ctrlList");
+    const ctrls=(DB.controllers||[]);
+    if(!ctrls.length){ card.hidden=true; return; }
+    card.hidden=false; host.innerHTML="";
+    const px=currentPx();
+    if(!px){
+      hint.className="ctrlhint muted";
+      hint.textContent="Seleziona una risoluzione per calcolare i controller compatibili con questa parete.";
+      // mostra comunque eventuali selezionati
+    } else {
+      hint.className="ctrlhint";
+      hint.innerHTML="Parete: <b>"+fmt(px.base)+"×"+fmt(px.h)+"</b> px · <b>"+fmt(px.base*px.h)+"</b> px totali";
+    }
+    // ordina: compatibili (dal più piccolo che regge) poi non compatibili
+    const withFit=ctrls.map(c=>({c,fit:ctrlFits(c,px)}));
+    const okList=withFit.filter(x=>x.fit).sort((a,b)=>(a.c.maxTotal||0)-(b.c.maxTotal||0));
+    const koList=withFit.filter(x=>!x.fit).sort((a,b)=>(a.c.maxTotal||0)-(b.c.maxTotal||0));
+
+    const capTxt=c=>{
+      const bits=[];
+      if(c.maxTotal) bits.push(fmt(c.maxTotal)+" px");
+      if(c.maxBase&&c.maxHeight) bits.push(fmt(c.maxBase)+"×"+fmt(c.maxHeight));
+      if(c.ports) bits.push(c.ports+" porte");
+      if(c.k4&&c.k4!=="-") bits.push("4K "+c.k4);
+      return bits.join(" · ");
+    };
+    const mkRow=(c,fit)=>{
+      const sel=S.selCtrls[c.id]>0;
+      const row=document.createElement("div");
+      row.className="ctrlrow"+(fit?"":" ko")+(sel?" sel":"");
+      const cb=document.createElement("button");
+      cb.className="ctrlpick"+(sel?" on":"");
+      cb.textContent=sel?"✓ Nel preventivo":"+ Aggiungi";
+      cb.addEventListener("click",()=>{ if(S.selCtrls[c.id]>0) delete S.selCtrls[c.id]; else S.selCtrls[c.id]=1; renderControllers(); });
+      const info=document.createElement("div");info.className="ctrlinfo";
+      const codeWarn=(!c.code)?' <span class="ctrlwarn">manca codice Odoo</span>':'';
+      const priceTxt=c.price>0?'<span class="ctrlprice">'+eur(c.price)+'</span>':'';
+      info.innerHTML='<div class="ctrlname">'+c.model+(px&&!fit?' <span class="ctrlwarn">non compatibile</span>':'')+codeWarn+'</div>'+
+                     '<div class="ctrlcap">'+capTxt(c)+'</div>';
+      const right=document.createElement("div");right.className="ctrlright";
+      if(sel){
+        const q=document.createElement("input");q.type="number";q.min="1";q.step="1";q.className="ctrlqty";q.value=S.selCtrls[c.id];
+        q.addEventListener("input",()=>{ const v=Math.max(1,parseInt(q.value,10)||1); S.selCtrls[c.id]=v; });
+        right.appendChild(q);
+      }
+      if(priceTxt){ const pr=document.createElement("div");pr.innerHTML=priceTxt;right.appendChild(pr); }
+      row.appendChild(cb);row.appendChild(info);row.appendChild(right);
+      return row;
+    };
+
+    if(px && okList.length){
+      const h=document.createElement("div");h.className="ctrlsub";h.textContent="Compatibili";host.appendChild(h);
+      okList.forEach(x=>host.appendChild(mkRow(x.c,true)));
+    } else if(px){
+      const none=document.createElement("div");none.className="ctrlnone";
+      none.textContent="Nessun controller singolo regge questa parete. Riduci la misura, cambia risoluzione, oppure valuta più controller in parallelo.";
+      host.appendChild(none);
+    }
+    // selezionati non compatibili (restano nel preventivo con avviso) + elenco non compatibili in coda
+    const koToShow = koList.filter(x=> S.selCtrls[x.c.id]>0 || px);
+    if(px && koToShow.length){
+      const h=document.createElement("div");h.className="ctrlsub muted";h.textContent="Non compatibili";host.appendChild(h);
+      koToShow.forEach(x=>host.appendChild(mkRow(x.c,false)));
+    }
+    if(!px){
+      // senza risoluzione: mostra tutti come lista neutra, con eventuali selezionati evidenziati
+      ctrls.forEach(c=>host.appendChild(mkRow(c,true)));
+    }
+  }
+
+  function renderChips(kind,elId,req,selTotal,reach,eng,eW,eH){
+    const base=Math.max(req, eng.units.length?Math.min(...eng.units):req);
+    const near=reach.map(v=>({v,d:Math.abs(v-base)})).sort((a,b)=>a.d-b.d).slice(0,6).map(o=>o.v);
+    const cl=near.slice().sort((a,b)=>Math.abs(a-base)-Math.abs(b-base))[0];
+    near.sort((a,b)=>a-b);
+    const host=$(elId); host.innerHTML="";
+    near.forEach(v=>{
+      const d=Math.round(v-req);
+      const c=document.createElement("button");
+      c.className="chip"+(v===selTotal?" on":"")+(v===cl?" closest":"");
+      c.innerHTML='<span class="m">'+fmt(v)+'</span><span class="d">'+(d===0?"esatta":(d>0?"+":"")+fmt(d))+'</span>';
+      c.addEventListener("click",()=>{
+        const p=currentProduct();
+        const vg=validGridFixed(p, kind, v, S.reqW, S.reqH, eW, eH);
+        if(vg){ S.selWc={total:vg.wComp.total,counts:vg.wComp.counts}; S.selHc={total:vg.hComp.total,counts:vg.hComp.counts}; }
+        else { if(kind==="w")S.selWc=compFromTotal(eng,v); else S.selHc=compFromTotal(eng,v); }
+        S.selKey=S.productId+"|"+S.reqW+"x"+S.reqH;
+        render();
+      });
+      host.appendChild(c);
+    });
+  }
+
+  function renderWall(product,cols,rows,totalW,totalH){
+    const NS="http://www.w3.org/2000/svg";
+    const colors=palette(product);
+    const MAXW=560,MAXH=440;
+    const scale=Math.min(MAXW/totalW, MAXH/totalH);
+    const wpx=totalW*scale, hpx=totalH*scale;
+    const padL=58,padT=44,padR=22,padB=22;
+    const svg=document.createElementNS(NS,"svg");
+    const vbW=padL+wpx+padR, vbH=padT+hpx+padB;
+    svg.setAttribute("viewBox","0 0 "+vbW+" "+vbH);
+    svg.setAttribute("width",vbW); svg.setAttribute("height",vbH);
+    svg.setAttribute("preserveAspectRatio","xMidYMid meet");
+    svg.setAttribute("class","anim"); svg.setAttribute("role","img");
+    svg.setAttribute("aria-label","Parete "+fmt(totalW)+" per "+fmt(totalH)+" mm");
+
+    const defs=document.createElementNS(NS,"defs");
+    defs.innerHTML='<filter id="glow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="9" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>';
+    svg.appendChild(defs);
+    const halo=document.createElementNS(NS,"rect");
+    halo.setAttribute("x",padL);halo.setAttribute("y",padT);halo.setAttribute("width",wpx);halo.setAttribute("height",hpx);
+    halo.setAttribute("rx",2);halo.setAttribute("fill","rgba(90,150,200,.10)");halo.setAttribute("filter","url(#glow)");
+    svg.appendChild(halo);
+
+    const missing=new Set();
+    let y=padT;
+    rows.forEach(rh=>{
+      let x=padL; const cellH=rh*scale;
+      cols.forEach(cw=>{
+        const cellW=cw*scale, key=cw+"x"+rh, cab=findCab(product,cw,rh), ok=!!cab;
+        if(!ok) missing.add(key);
+        const r=document.createElementNS(NS,"rect");
+        r.setAttribute("x",x+0.75);r.setAttribute("y",y+0.75);
+        r.setAttribute("width",Math.max(0,cellW-1.5));r.setAttribute("height",Math.max(0,cellH-1.5));
+        r.setAttribute("rx",1.5);
+        r.setAttribute("fill", ok?(colors[key]||"#3a4550"):"#3a2a2c");
+        r.setAttribute("stroke","rgba(10,14,18,.65)");r.setAttribute("stroke-width",1);
+        svg.appendChild(r);
+        if(!ok){
+          const bb=document.createElementNS(NS,"rect");
+          bb.setAttribute("x",x+2);bb.setAttribute("y",y+2);bb.setAttribute("width",Math.max(0,cellW-4));bb.setAttribute("height",Math.max(0,cellH-4));
+          bb.setAttribute("class","badcell");svg.appendChild(bb);
+        }
+        if(S.showModules && product.modW>0 && product.modH>0){
+          const nx=Math.round(cw/product.modW), ny=Math.round(rh/product.modH);
+          if(nx>1) for(let i=1;i<nx;i++){ const mx=x+(cw/nx)*i*scale; ln(mx,y+1,mx,y+cellH-1); }
+          if(ny>1) for(let j=1;j<ny;j++){ const my=y+(rh/ny)*j*scale; ln(x+1,my,x+cellW-1,my); }
+        }
+        if(cellW>62&&cellH>28){
+          const t=document.createElementNS(NS,"text");t.setAttribute("class","cabtxt");
+          t.setAttribute("x",x+cellW/2);t.setAttribute("y",y+cellH/2+3);t.setAttribute("text-anchor","middle");
+          t.textContent=cw+"×"+rh;svg.appendChild(t);
+        }
+        x+=cellW;
+      });
+      y+=cellH;
+    });
+
+    const topY=padT-18;
+    L(padL,topY,padL+wpx,topY,"dimline"); L(padL,topY-4,padL,topY+4,"dimtick"); L(padL+wpx,topY-4,padL+wpx,topY+4,"dimtick");
+    let cx=padL; cols.slice(0,-1).forEach(cw=>{cx+=cw*scale;L(cx,topY-3,cx,topY+3,"dimtick sub");});
+    T(padL+wpx/2,topY-7,fmt(totalW)+" mm","dimlbl","middle");
+    if(S.reqW>=Math.min(...cols)&&S.reqW<=totalW){ const gx=padL+S.reqW*scale; L(gx,topY,gx,padT+hpx,"reqguide"); T(gx,padT+hpx+14,"richiesta","reqlbl","middle"); }
+
+    const leftX=padL-18;
+    L(leftX,padT,leftX,padT+hpx,"dimline"); L(leftX-4,padT,leftX+4,padT,"dimtick"); L(leftX-4,padT+hpx,leftX+4,padT+hpx,"dimtick");
+    let ry=padT; rows.slice(0,-1).forEach(rh=>{ry+=rh*scale;L(leftX-3,ry,leftX+3,ry,"dimtick sub");});
+    const vt=document.createElementNS(NS,"text");vt.setAttribute("class","dimlbl");vt.setAttribute("text-anchor","middle");
+    vt.setAttribute("transform","translate("+(leftX-8)+","+(padT+hpx/2)+") rotate(-90)");vt.textContent=fmt(totalH)+" mm";svg.appendChild(vt);
+    if(S.reqH>=Math.min(...rows)&&S.reqH<=totalH){ const gy=padT+S.reqH*scale; L(leftX,gy,padL+wpx,gy,"reqguide"); }
+
+    $("stage").innerHTML="";$("stage").appendChild(svg);
+
+    if(missing.size){
+      $("warnBox").hidden=false;
+      $("warnBox").textContent="Attenzione: questa combinazione richiede cabinet non a catalogo ("+[...missing].join(", ")+"). Aggiungi i formati mancanti oppure scegli un'altra composizione.";
+    } else $("warnBox").hidden=true;
+
+    function ln(x1,y1,x2,y2){const l=document.createElementNS(NS,"line");l.setAttribute("x1",x1);l.setAttribute("y1",y1);l.setAttribute("x2",x2);l.setAttribute("y2",y2);l.setAttribute("stroke","rgba(0,0,0,.22)");l.setAttribute("stroke-width",.6);svg.appendChild(l);}
+    function L(x1,y1,x2,y2,cls){const l=document.createElementNS(NS,"line");l.setAttribute("x1",x1);l.setAttribute("y1",y1);l.setAttribute("x2",x2);l.setAttribute("y2",y2);l.setAttribute("class",cls);svg.appendChild(l);}
+    function T(x,yv,txt,cls,anchor){const t=document.createElementNS(NS,"text");t.setAttribute("x",x);t.setAttribute("y",yv);t.setAttribute("class",cls);t.setAttribute("text-anchor",anchor);t.textContent=txt;svg.appendChild(t);}
+  }
+
+  function bomOf(product,bComp,hComp){
+    const mix={}; let cnt=0,types=0,price=0,priceOk=true,valid=true;
+    Object.keys(bComp.counts).map(Number).forEach(w=>{
+      Object.keys(hComp.counts).map(Number).forEach(h=>{
+        const q=bComp.counts[w]*hComp.counts[h]; if(!q) return;
+        mix[w+"x"+h]=q; cnt+=q; types++;
+        const cab=findCab(product,w,h);
+        if(!cab) valid=false;
+        const up=cab?priceOf(cab):0;
+        if(up>0) price+=q*up; else priceOk=false;
+      });
+    });
+    return {mix,cnt,types,price,priceOk,valid};
+  }
+
+  function renderMetrics(product,cols,rows,totalW,totalH){
+    const colors=palette(product);
+    $("mSize").innerHTML=fmt(totalW)+" × "+fmt(totalH)+' <small>mm</small>';
+    $("mArea").innerHTML=((totalW*totalH)/1e6).toFixed(2).replace(".",",")+' <small>m²</small>';
+    $("mMods").innerHTML=(cols.length*rows.length)+' <small>· '+cols.length+"×"+rows.length+"</small>";
+    if(S.pitch>0){ const px=Math.round(totalW/S.pitch),py=Math.round(totalH/S.pitch);
+      $("mRes").innerHTML=fmt(px)+"×"+fmt(py)+' <small>· '+(S.pitchLabel?S.pitchLabel+" · ":"")+((px*py)/1e6).toFixed(2).replace(".",",")+" Mpx</small>"; }
+    else $("mRes").innerHTML='<small>—</small>';
+
+    const ratio=totalW/totalH, dev=(ratio-R169)/R169, near=Math.abs(dev)<=0.05;
+    $("mRatioBox").classList.toggle("ratio169", near);
+    $("mRatio").innerHTML = ratioLabel(totalW,totalH) + ' <small>· '+ratio.toFixed(2).replace(".",",")+(near?" ≈ 16:9":" · 16:9 "+(dev>0?"+":"")+(dev*100).toFixed(0)+"%")+'</small>';
+
+    const cw={};cols.forEach(w=>cw[w]=(cw[w]||0)+1);
+    const rh={};rows.forEach(h=>rh[h]=(rh[h]||0)+1);
+    const anyW=product.cabinets.some(c=>c.weight>0), anyP=product.cabinets.some(c=>c.power>0),
+          anyPr=hasAnyPrice(product), anyMod=product.cabinets.some(c=>c.modQty>0);
+
+    const list=$("bomList");list.innerHTML="";
+    let tot=0,wSum=0,pSum=0,prSum=0,modSum=0, wPart=false,pPart=false,prPart=false,modPart=false;
+    Object.keys(cw).map(Number).sort((a,b)=>b-a).forEach(w=>{
+      Object.keys(rh).map(Number).sort((a,b)=>b-a).forEach(h=>{
+        const count=cw[w]*rh[h]; if(!count) return; tot+=count;
+        const key=w+"x"+h, cab=findCab(product,w,h), ok=!!cab;
+        const unitPrice = cab ? priceOf(cab) : 0;
+        if(anyW){ if(cab&&cab.weight>0) wSum+=count*cab.weight; else wPart=true; }
+        if(anyP){ if(cab&&cab.power>0) pSum+=count*cab.power; else pPart=true; }
+        if(anyPr){ if(unitPrice>0) prSum+=count*unitPrice; else prPart=true; }
+        if(anyMod){ if(cab&&cab.modQty>0) modSum+=count*cab.modQty; else modPart=true; }
+        const modTxt=(cab&&cab.modQty>0)?' · '+cab.modQty+' mod'+(product.modW>0&&product.modH>0?' '+product.modW+'×'+product.modH:''):'';
+        const rowSub=(anyPr&&unitPrice>0)?'<span class="sub">'+eur(count*unitPrice)+'</span>':(anyPr?'<span class="sub">—</span>':'');
+        const row=document.createElement("div");row.className="bomrow";
+        row.innerHTML='<span class="sw" style="background:'+(ok?(colors[key]||"#3a4550"):"#5a3a3c")+'"></span>'+
+          '<span class="nm">'+w+'×'+h+'<span class="dim"> mm'+(ok?"":" · fuori catalogo")+modTxt+'</span></span>'+
+          '<span class="ct">'+count+' <small>pz</small></span>'+rowSub;
+        list.appendChild(row);
+      });
+    });
+    $("bomTotal").textContent=tot;
+    $("mModules").innerHTML = anyMod ? (fmt(modSum)+(modPart?' <small>parz.</small>':'')) : '<small>—</small>';
+
+    const showSpec=anyW||anyP||anyPr||anyMod;
+    $("specCard").hidden=!showSpec;
+    if(showSpec){
+      $("tWeight").innerHTML = anyW ? (wSum.toFixed(1).replace(".",",")+' <small>kg</small>') : '<small>—</small>';
+      $("pWeight").hidden=!(anyW&&wPart);
+      $("tPower").innerHTML = anyP ? (fmt(pSum)+' <small>W · '+(pSum/1000).toFixed(2).replace(".",",")+' kW</small>') : '<small>—</small>';
+      $("pPower").hidden=!(anyP&&pPart);
+      $("tModules").innerHTML = anyMod ? (fmt(modSum)+' <small>moduli</small>') : '<small>—</small>';
+      $("pModules").hidden=!(anyMod&&modPart);
+      $("tPrice").innerHTML = anyPr ? eur(prSum) : '<small>—</small>';
+      $("pPrice").hidden=!(anyPr&&prPart);
+    }
+  }
+
+  // -------- generatore alternative di composizione --------
+  function axisCandidates(units, req, eng, currentComp){
+    const set=new Map();
+    const add=cc=>{ const {total,counts}=cleanCounts(cc); if(total<=0) return; const k=total+"|"+canon(counts); if(!set.has(k)) set.set(k,{total,counts}); };
+    add(eng.solve(req).counts);                    // predefinita (grande/uniforme)
+    units.forEach(u=>{ const n=Math.max(1,Math.round(req/u)); [n-1,n,n+1].forEach(k=>{ if(k>=1) add({[u]:k}); }); }); // uniformi
+    if(currentComp) add(currentComp.counts);
+    return [...set.values()];
+  }
+
+  function renderAltWalls(product,eW,eH,reqW,reqH){
+    const widths=product.cabinets.map(c=>c.w), heights=product.cabinets.map(c=>c.h);
+    const baseC=axisCandidates(widths,reqW,eW,S.selWc);
+    const heightC=axisCandidates(heights,reqH,eH,S.selHc);
+    const walls=new Map();
+    baseC.forEach(b=>heightC.forEach(h=>{
+      const info=bomOf(product,b,h);
+      const key=b.total+"x"+h.total+"|"+Object.keys(info.mix).sort().map(k=>k+":"+info.mix[k]).join(",");
+      if(walls.has(key)) return;
+      walls.set(key,{b,h,tW:b.total,tH:h.total,dW:b.total-reqW,dH:h.total-reqH,
+        close:Math.abs(b.total-reqW)+Math.abs(h.total-reqH),
+        mix:info.mix,cnt:info.cnt,types:info.types,price:info.price,priceOk:info.priceOk,valid:info.valid,
+        uniform:info.types<=1});
+    }));
+    let list=[...walls.values()].filter(w=>w.valid);
+    const isCur=w=> w.b.total===S.selWc.total && canon(w.b.counts)===canon(S.selWc.counts)
+                 && w.h.total===S.selHc.total && canon(w.h.counts)===canon(S.selHc.counts);
+    list.sort((a,b)=> a.close-b.close || a.types-b.types || (a.priceOk===b.priceOk ? a.price-b.price : (a.priceOk?-1:1)) );
+    let top=list.slice(0,6);
+    const curW=list.find(isCur);
+    if(curW && !top.includes(curW)) top=[curW].concat(top).slice(0,6);
+
+    const host=$("altList"); host.innerHTML="";
+    // marca la soluzione con MENO cabinet (numero) e quella più economica tra le mostrate
+    let minCntW=null, cheapW=null;
+    top.forEach(w=>{
+      if(minCntW===null || w.cnt<minCntW.cnt) minCntW=w;
+      if(w.priceOk && (cheapW===null || w.price<cheapW.price)) cheapW=w;
+    });
+    top.forEach(w=>{
+      const parts=Object.keys(w.mix).sort((x,y)=>{
+        const [xw,xh]=x.split("x").map(Number),[yw,yh]=y.split("x").map(Number); return (yw*yh)-(xw*xh);
+      }).map(k=>w.mix[k]+"× "+k.replace("x","×"));
+      const cur=isCur(w);
+      const isMinCnt=(w===minCntW), isCheap=(w===cheapW);
+      const btn=document.createElement("button");
+      btn.type="button"; btn.tabIndex=0;
+      btn.className="altwall"+(cur?" cur":"");
+      const marks=(isMinCnt?" ★ meno cabinet":"")+(isCheap?" ♥ più economica":"");
+      btn.setAttribute("aria-label", parts.join(", ")+" — "+fmt(w.tW)+" per "+fmt(w.tH)+" mm, "+w.cnt+" cabinet"+(w.priceOk?", "+eur(w.price):"")+marks+(cur?" (attuale)":""));
+      const icons='<span class="altmarks">'+(isMinCnt?'<span class="mk star" title="Meno cabinet">★</span>':'')+(isCheap?'<span class="mk heart" title="Più economica">♥</span>':'')+'</span>';
+      let badge = cur ? '<span class="badge">attuale</span>' : (w.uniform? '<span class="badge uni">cabinet uguali</span>':'');
+      const dW=Math.round(w.dW), dH=Math.round(w.dH);
+      const dCls=(d)=> d===0?'ok':'off';
+      const priceTxt = w.priceOk ? ' · <span class="altprice">'+eur(w.price)+'</span>' : "";
+      btn.innerHTML='<div class="mix"><span>'+parts.join(" · ")+icons+'</span>'+badge+'</div>'+
+        '<div class="meta">'+fmt(w.tW)+' × '+fmt(w.tH)+' mm · Δ <span class="'+dCls(dW)+'">'+signed(dW)+'</span>/<span class="'+dCls(dH)+'">'+signed(dH)+'</span> · '+w.cnt+' cabinet'+priceTxt+'</div>';
+      btn.addEventListener("click",()=>{ S.selWc={total:w.b.total,counts:Object.assign({},w.b.counts)}; S.selHc={total:w.h.total,counts:Object.assign({},w.h.counts)}; S.selKey=S.productId+"|"+S.reqW+"x"+S.reqH; render(); });
+      btn.addEventListener("keydown",(e)=>{
+        if(e.key==="ArrowDown"||e.key==="ArrowUp"){
+          e.preventDefault();
+          const items=[...host.querySelectorAll(".altwall")];
+          const i=items.indexOf(e.currentTarget);
+          const ni=e.key==="ArrowDown"?Math.min(i+1,items.length-1):Math.max(i-1,0);
+          if(ni!==i){ items[ni].click(); items[ni].focus(); }
+        }
+      });
+      host.appendChild(btn);
+    });
+  }
+
+  function renderRatioSuggest(eW,eH,totalW,totalH){
+    const host=$("ratioSuggest");
+    const RATIOS=[{lbl:"16:9",r:16/9},{lbl:"9:16",r:9/16},{lbl:"4:3",r:4/3},{lbl:"3:4",r:3/4}];
+    host.innerHTML="";
+    const lbl=document.createElement("span");lbl.className="lbl";lbl.textContent="Proporzioni:";
+    host.appendChild(lbl);
+    let shown=0;
+    RATIOS.forEach(R=>{
+      const curDev=Math.abs(totalW/totalH - R.r);
+      // opzione A: fisso la base, adatto l'altezza; opzione B: fisso l'altezza, adatto la base
+      const hA=eH.solve(totalW/R.r).sum, devA=hA?Math.abs(totalW/hA - R.r):Infinity;
+      const wB=eW.solve(totalH*R.r).sum, devB=wB?Math.abs(wB/totalH - R.r):Infinity;
+      let W,H,dev;
+      if(devA<=devB){ W=totalW; H=hA; dev=devA; } else { W=wB; H=totalH; dev=devB; }
+      if(!W||!H) return;
+      // salta se già in proporzione o se non migliora
+      if(curDev<=0.02) return;
+      if(dev>=curDev-1e-9 || (W===totalW&&H===totalH)) return;
+      const btn=document.createElement("button");
+      btn.type="button";
+      btn.innerHTML='<b>'+R.lbl+'</b> · '+fmt(W)+" × "+fmt(H)+" mm";
+      btn.setAttribute("aria-label","Proporzione "+R.lbl+": "+fmt(W)+" per "+fmt(H)+" mm");
+      btn.addEventListener("click",()=>{
+        const p=currentProduct();
+        const vg=validGridFixed(p,"w",W,W,H,eW,eH);
+        if(vg){ S.selWc={total:vg.wComp.total,counts:vg.wComp.counts}; S.selHc={total:vg.hComp.total,counts:vg.hComp.counts}; }
+        else { S.selWc=compFromTotal(eW,W); S.selHc=compFromTotal(eH,H); }
+        S.selKey=S.productId+"|"+S.reqW+"x"+S.reqH;
+        render();
+      });
+      host.appendChild(btn); shown++;
+    });
+    host.hidden = shown===0;
+  }
+
+  // ================= AMMINISTRAZIONE =================
+  const overlay=$("overlay");
+  function openAdmin(){ overlay.classList.add("show"); $("lockView").classList.remove("hidden"); $("panelView").classList.add("hidden"); $("pwInput").value=""; $("pwErr").textContent=""; setTimeout(()=>$("pwInput").focus(),50); }
+  function closeAdmin(){ overlay.classList.remove("show"); }
+  $("openAdmin").addEventListener("click",openAdmin);
+  $("closeAdmin").addEventListener("click",closeAdmin);
+  overlay.addEventListener("click",e=>{ if(e.target===overlay) closeAdmin(); });
+
+  let draft=null; let draftControllers=null;
+  function tryEnter(){
+    if($("pwInput").value===DB.password){ draft=JSON.parse(JSON.stringify(DB.products)); draftControllers=JSON.parse(JSON.stringify(DB.controllers||[])); $("lockView").classList.add("hidden"); $("panelView").classList.remove("hidden"); renderProdList(); renderCtrlAdmin(); }
+    else { $("pwErr").textContent="Password errata."; }
+  }
+  $("pwEnter").addEventListener("click",tryEnter);
+  $("pwInput").addEventListener("keydown",e=>{ if(e.key==="Enter") tryEnter(); });
+
+  function numOrUndef(v){ const n=parseFloat(v); return (isFinite(n)&&n>0)?n:undefined; }
+  function mkField(labelText,obj,key){
+    const f=document.createElement("div");f.className="ffield";
+    const l=document.createElement("label");l.textContent=labelText;
+    const i=document.createElement("input");i.type="number";i.min="0";i.step="any";
+    if(obj[key]!==undefined&&obj[key]!==null) i.value=obj[key];
+    i.addEventListener("input",()=>{ obj[key]=numOrUndef(i.value); });
+    f.appendChild(l);f.appendChild(i); return f;
+  }
+  function optionalGrid(obj){
+    const g=document.createElement("div");g.className="cabgrid";
+    g.appendChild(mkField("Peso kg",obj,"weight"));
+    g.appendChild(mkField("Assorb. W",obj,"power"));
+    g.appendChild(mkField("N° moduli",obj,"modQty"));
+    return g;
+  }
+  function priceBlock(cab,product){
+    const wrap=document.createElement("div");
+    const res=(product.resolutions||[]).filter(r=>r.pitch>0);
+    const hdr=document.createElement("div");hdr.className="reshdr";hdr.style.margin="4px 0 8px";
+    hdr.textContent=res.length?"Prezzo € e codice Odoo per risoluzione":"Prezzo e codice Odoo";
+    wrap.appendChild(hdr);
+    const mkRow=(label,getP,setP,getC,setC)=>{
+      const row=document.createElement("div");row.className="pcrow";
+      const l=document.createElement("span");l.className="pclab";l.textContent=label;
+      const pi=document.createElement("input");pi.type="number";pi.min="0";pi.step="any";pi.placeholder="€";const gp=getP();if(gp>0)pi.value=gp;
+      pi.addEventListener("input",()=>setP(numOrUndef(pi.value)));
+      const ci=document.createElement("input");ci.type="text";ci.placeholder="codice Odoo";const gc=getC();if(gc)ci.value=gc;
+      ci.addEventListener("input",()=>setC(ci.value.trim()));
+      row.appendChild(l);row.appendChild(pi);row.appendChild(ci);return row;
+    };
+    if(res.length){
+      res.forEach(r=>{
+        wrap.appendChild(mkRow(r.label||("P"+r.pitch),
+          ()=>cab.prices&&cab.prices[r.id],
+          v=>{ if(!cab.prices)cab.prices={}; if(v)cab.prices[r.id]=v; else delete cab.prices[r.id]; },
+          ()=>cab.codes&&cab.codes[r.id],
+          v=>{ if(!cab.codes)cab.codes={}; if(v)cab.codes[r.id]=v; else delete cab.codes[r.id]; }));
+      });
+    } else {
+      wrap.appendChild(mkRow("Prezzo",
+        ()=>cab.price, v=>cab.price=v,
+        ()=>cab.code, v=>cab.code=(v||undefined)));
+    }
+    return wrap;
+  }
+  function mkColorField(cab,product,dotEl){
+    const f=document.createElement("div");f.className="ffield color";
+    const l=document.createElement("label");l.textContent="Colore cabinet";
+    const row=document.createElement("div");row.className="crow";
+    const ci=document.createElement("input");ci.type="color";ci.value=cab.color||autoHex(product,cab.w,cab.h);
+    ci.addEventListener("input",()=>{ cab.color=ci.value; if(dotEl) dotEl.style.background=ci.value; });
+    const auto=document.createElement("button");auto.type="button";auto.className="auto";auto.textContent="auto";
+    auto.addEventListener("click",()=>{ delete cab.color; const hex=autoHex(product,cab.w,cab.h); ci.value=hex; if(dotEl) dotEl.style.background=hex; });
+    row.appendChild(ci);row.appendChild(auto);
+    f.appendChild(l);f.appendChild(row);
+    return f;
+  }
+  function renderProdList(){
+    const host=$("prodList");host.innerHTML="";
+    draft.forEach((p,pi)=>{
+      const box=document.createElement("div");box.className="prod";
+      const head=document.createElement("div");head.className="phead";
+      const nm=document.createElement("input");nm.type="text";nm.value=p.name;nm.addEventListener("input",()=>p.name=nm.value);
+      const pmod=document.createElement("div");pmod.className="pmod";
+      const mwl=document.createElement("span");mwl.textContent="Modulo";
+      const mw=document.createElement("input");mw.type="number";mw.min="1";mw.placeholder="largh.";if(p.modW>0)mw.value=p.modW;
+      const mtimes=document.createElement("span");mtimes.className="times";mtimes.textContent="×";
+      const mh=document.createElement("input");mh.type="number";mh.min="1";mh.placeholder="alt.";if(p.modH>0)mh.value=p.modH;
+      const mmm=document.createElement("span");mmm.textContent="mm";
+      mw.addEventListener("input",()=>p.modW=numOrUndef(mw.value));
+      mh.addEventListener("input",()=>p.modH=numOrUndef(mh.value));
+      pmod.appendChild(mwl);pmod.appendChild(mw);pmod.appendChild(mtimes);pmod.appendChild(mh);pmod.appendChild(mmm);
+      const del=document.createElement("button");del.className="btn danger sm";del.textContent="Elimina";
+      del.addEventListener("click",()=>{ draft.splice(pi,1); renderProdList(); });
+      head.appendChild(nm);head.appendChild(pmod);head.appendChild(del);box.appendChild(head);
+
+      // --- descrizione per il preventivo Odoo ---
+      const dwrap=document.createElement("div");dwrap.className="pdesc";
+      const dl=document.createElement("label");dl.textContent="Descrizione preventivo (usata nella riga sezione dell'offerta)";
+      const di=document.createElement("input");di.type="text";di.placeholder="es. Schermo ledwall da esterno";if(p.desc)di.value=p.desc;
+      di.addEventListener("input",()=>p.desc=(di.value||undefined));
+      dwrap.appendChild(dl);dwrap.appendChild(di);box.appendChild(dwrap);
+
+      // --- risoluzioni del modello ---
+      if(!Array.isArray(p.resolutions)) p.resolutions=[];
+      const rb=document.createElement("div");rb.className="resblock";
+      const rh2=document.createElement("div");rh2.className="reshdr";rh2.textContent="Risoluzioni disponibili (nome + pixel pitch mm)";
+      rb.appendChild(rh2);
+      if(!p.resolutions.length){ const e=document.createElement("div");e.className="resempty";e.textContent="Nessuna risoluzione — aggiungine una qui sotto.";rb.appendChild(e); }
+      p.resolutions.forEach((r,ri)=>{
+        const row=document.createElement("div");row.className="resrow";
+        const ln=document.createElement("input");ln.type="text";ln.placeholder="es. P2.5";ln.value=r.label||"";ln.addEventListener("input",()=>r.label=ln.value);
+        const lp=document.createElement("input");lp.type="number";lp.min="0";lp.step="any";lp.placeholder="pitch mm";if(r.pitch>0)lp.value=r.pitch;lp.addEventListener("input",()=>r.pitch=numOrUndef(lp.value));
+        const rm=document.createElement("button");rm.className="rm";rm.textContent="×";rm.title="Rimuovi";rm.addEventListener("click",()=>{ p.resolutions.splice(ri,1); renderProdList(); });
+        row.appendChild(ln);row.appendChild(lp);row.appendChild(rm);rb.appendChild(row);
+      });
+      const radd=document.createElement("div");radd.className="resadd";
+      const nl=document.createElement("input");nl.type="text";nl.placeholder="Nome (es. P4)";
+      const np=document.createElement("input");np.type="number";np.min="0";np.step="any";np.placeholder="pitch mm";
+      const nb=document.createElement("button");nb.className="btn ghost sm";nb.textContent="+ Risoluzione";
+      const addRes=()=>{ const pitch=numOrUndef(np.value); const label=nl.value.trim()||(pitch?("P"+pitch):""); if(pitch>0){ p.resolutions.push({id:rid(),label,pitch}); renderProdList(); } };
+      nb.addEventListener("click",addRes);
+      np.addEventListener("keydown",e=>{ if(e.key==="Enter") addRes(); });
+      radd.appendChild(nl);radd.appendChild(np);radd.appendChild(nb);rb.appendChild(radd);
+      box.appendChild(rb);
+
+      p.cabinets.forEach((c,ci)=>{
+        const card=document.createElement("div");card.className="cabcard";
+        const ch=document.createElement("div");ch.className="cabcard-head";
+        const dot=document.createElement("span");dot.className="dot";dot.style.background=c.color||autoHex(p,c.w,c.h);
+        const dim=document.createElement("span");dim.className="cdim";dim.textContent=c.w+"×"+c.h+" mm";
+        const rm=document.createElement("button");rm.className="rm";rm.textContent="×";rm.title="Rimuovi cabinet";
+        rm.addEventListener("click",()=>{ p.cabinets.splice(ci,1); renderProdList(); });
+        ch.appendChild(dot);ch.appendChild(dim);ch.appendChild(rm);
+        const grid=optionalGrid(c); grid.appendChild(mkColorField(c,p,dot));
+        card.appendChild(ch); card.appendChild(grid); card.appendChild(priceBlock(c,p)); box.appendChild(card);
+      });
+
+      const addCard=document.createElement("div");addCard.className="cabcard";
+      const ah=document.createElement("div");ah.className="cabcard-head";
+      const aw=document.createElement("div");aw.className="adddim";
+      const iw=document.createElement("input");iw.type="number";iw.min="1";iw.placeholder="largh.";
+      const tx=document.createElement("span");tx.className="times";tx.textContent="×";
+      const ih=document.createElement("input");ih.type="number";ih.min="1";ih.placeholder="alt.";
+      aw.appendChild(iw);aw.appendChild(tx);aw.appendChild(ih);
+      const cap=document.createElement("span");cap.className="cdim";cap.style.color="var(--muted-2)";cap.style.fontSize="12px";cap.textContent="nuovo cabinet";
+      ah.appendChild(aw);ah.appendChild(cap);addCard.appendChild(ah);
+      const tmp={}; addCard.appendChild(optionalGrid(tmp)); addCard.appendChild(priceBlock(tmp,p));
+      const foot=document.createElement("div");foot.className="cabcard-foot";
+      const ab=document.createElement("button");ab.className="btn ghost sm";ab.textContent="+ Aggiungi cabinet";
+      ab.addEventListener("click",()=>{ const w=parseInt(iw.value,10),h=parseInt(ih.value,10);
+        if(w>0&&h>0&&!p.cabinets.some(c=>c.w===w&&c.h===h)){ p.cabinets.push(Object.assign({w,h},tmp)); renderProdList(); } });
+      foot.appendChild(ab);addCard.appendChild(foot);
+      box.appendChild(addCard);
+      host.appendChild(box);
+    });
+  }
+
+  function renderCtrlAdmin(){
+    const host=$("ctrlAdminList"); if(!host) return; host.innerHTML="";
+    if(!Array.isArray(draftControllers)) draftControllers=[];
+    if(!draftControllers.length){
+      const e=document.createElement("div");e.className="resempty";e.textContent="Nessun controller — aggiungine uno qui sotto oppure carica i modelli Huidu.";host.appendChild(e);
+    } else {
+      const head=document.createElement("div");head.className="cadmhead";
+      head.innerHTML="<span>Modello</span><span>Max px tot.</span><span>Max base</span><span>Max alt.</span><span>Porte</span><span>Res/porta</span><span>4K</span><span>Prezzo</span><span>Cod. Odoo</span><span></span>";
+      host.appendChild(head);
+    }
+    const num=(obj,key,ph)=>{ const i=document.createElement("input");i.type="number";i.min="0";i.step="any";i.placeholder=ph||"";if(obj[key]>0)i.value=obj[key];i.addEventListener("input",()=>obj[key]=numOrUndef(i.value));return i; };
+    const txt=(obj,key,ph)=>{ const i=document.createElement("input");i.type="text";i.placeholder=ph||"";if(obj[key])i.value=obj[key];i.addEventListener("input",()=>obj[key]=(i.value.trim()||undefined));return i; };
+    draftControllers.forEach((c,ci)=>{
+      const row=document.createElement("div");row.className="cadmrow";
+      row.appendChild(txt(c,"model","Modello"));
+      row.appendChild(num(c,"maxTotal","px tot"));
+      row.appendChild(num(c,"maxBase","base"));
+      row.appendChild(num(c,"maxHeight","alt"));
+      row.appendChild(num(c,"ports","porte"));
+      row.appendChild(num(c,"maxResPort","res/porta"));
+      row.appendChild(txt(c,"k4","4K"));
+      row.appendChild(num(c,"price","€"));
+      row.appendChild(txt(c,"code","codice Odoo"));
+      const rm=document.createElement("button");rm.className="rm";rm.textContent="×";rm.title="Rimuovi";
+      rm.addEventListener("click",()=>{ draftControllers.splice(ci,1); renderCtrlAdmin(); });
+      row.appendChild(rm);
+      host.appendChild(row);
+    });
+  }
+
+  $("addProd").addEventListener("click",()=>{ const name=$("newProdName").value.trim(); if(!name) return; draft.push({id:"p_"+Date.now().toString(36),name,resolutions:[],cabinets:[]}); $("newProdName").value=""; renderProdList(); });
+  $("addCtrl").addEventListener("click",()=>{
+    const model=$("c-mod").value.trim();
+    const maxTotal=numOrUndef($("c-tot").value), maxBase=numOrUndef($("c-base").value), maxHeight=numOrUndef($("c-ht").value);
+    if(!model||!maxTotal||!maxBase||!maxHeight){ alert("Inserisci almeno: Modello, Max px totali, base e altezza."); return; }
+    draftControllers.push({ id:"c_"+Date.now().toString(36), model, maxTotal, maxBase, maxHeight,
+      ports:numOrUndef($("c-ports").value), maxResPort:numOrUndef($("c-rp").value),
+      k4:($("c-k4").value.trim()||undefined), price:numOrUndef($("c-price").value), code:($("c-code").value.trim()||undefined) });
+    ["c-mod","c-tot","c-base","c-ht","c-ports","c-rp","c-k4","c-price","c-code"].forEach(id=>$(id).value="");
+    renderCtrlAdmin();
+  });
+  $("seedHuidu").addEventListener("click",()=>{
+    HUIDU_SEED.forEach(h=>{ if(!draftControllers.some(c=>(c.model||"").toUpperCase()===h.model.toUpperCase())){ draftControllers.push(Object.assign({},h,{id:"c_"+Math.random().toString(36).slice(2,9)})); } });
+    renderCtrlAdmin();
+  });
+  $("panelSave").addEventListener("click",()=>{
+    DB.products=draft.filter(p=>p.name.trim());
+    if(!DB.products.length) DB.products=JSON.parse(JSON.stringify(DEFAULTS.products));
+    DB.controllers=normControllers(draftControllers||[]);
+    save();
+    if(!DB.products.find(p=>p.id===S.productId)){ S.productId=DB.products[0].id; }
+    S.selWc=S.selHc=null; fillProductSelect(); render(); closeAdmin();
+  });
+  $("panelClose").addEventListener("click",closeAdmin);
+
+  $("exportBtn").addEventListener("click",()=>{
+    const data=JSON.stringify({password:DB.password, products:draft||DB.products, controllers:draftControllers||DB.controllers||[]},null,2);
+    const blob=new Blob([data],{type:"application/json"});
+    const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="catalog.json";a.click();URL.revokeObjectURL(a.href);
+  });
+  $("importBtn").addEventListener("click",()=>$("importFile").click());
+  $("cloudSaveBtn").addEventListener("click",async ()=>{
+    const msg=$("cloudSaveMsg");
+    const token=prompt("Token di salvataggio (impostato su Netlify come ADMIN_TOKEN):");
+    if(token===null) return;
+    if(!token.trim()){ msg.className="odoostatus err"; msg.textContent="Token mancante."; return; }
+    const products=(draft||DB.products).filter(p=>p.name.trim());
+    const controllers=normControllers(draftControllers||DB.controllers||[]);
+    const catalog={ password:DB.password, products, controllers };
+    msg.className="odoostatus wait"; msg.textContent="Salvataggio sul sito in corso…";
+    try{
+      const r=await fetch("/.netlify/functions/save-catalog",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({token:token.trim(),catalog})});
+      const d=await r.json().catch(()=>({}));
+      if(r.ok&&d.ok){
+        // applica subito anche in locale, così pannello e pagina restano allineati
+        if(products.length) DB.products=JSON.parse(JSON.stringify(products));
+        DB.controllers=JSON.parse(JSON.stringify(controllers));
+        catalogSource="cloud"; save();
+        if(!DB.products.find(p=>p.id===S.productId)){ S.productId=DB.products[0].id; }
+        draft=JSON.parse(JSON.stringify(DB.products));
+        draftControllers=JSON.parse(JSON.stringify(DB.controllers));
+        renderProdList(); renderCtrlAdmin();
+        S.selWc=S.selHc=null; fillProductSelect(); updateSourceNote(); render();
+        msg.className="odoostatus ok"; msg.textContent="Salvato sul sito e applicato: le modifiche sono attive per tutti.";
+      }
+      else { msg.className="odoostatus err"; msg.textContent="Errore: "+((d&&d.error)||("HTTP "+r.status))+"."; }
+    }catch(err){ msg.className="odoostatus err"; msg.textContent="Connettore non raggiungibile: verifica di aver deployato save-catalog."; }
+  });
+  $("importFile").addEventListener("change",e=>{
+    const rd=new FileReader();
+    rd.onload=()=>{ try{ const obj=JSON.parse(rd.result);
+      if(obj&&Array.isArray(obj.products)){
+        const norm=normalizeDB(obj);
+        draft=norm.products;
+        draftControllers=norm.controllers;
+        if(typeof obj.password==="string"&&obj.password){ DB.password=obj.password; }
+        renderProdList(); renderCtrlAdmin();
+      } else alert("File non valido."); }catch(err){ alert("Impossibile leggere il file."); } };
+    rd.readAsText(f); e.target.value="";
+  });
+
+  // ================= EVENTI =================
+  $("inProduct").addEventListener("change",e=>{ S.productId=e.target.value; S.selWc=S.selHc=null; updateCatLine(); render(); });
+  let deb;
+  ["inBase","inHeight"].forEach(id=>$(id).addEventListener("input",()=>{ clearTimeout(deb); deb=setTimeout(()=>{ S.selWc=S.selHc=null; render(); },120); }));
+  $("inPitch").addEventListener("change",render);
+  $("modToggle").addEventListener("click",()=>{ S.showModules=!S.showModules; render(); });
+  $("odooExport").addEventListener("click",()=>{
+    const off=buildOffer(); if(!off) return;
+    const blob=new Blob([JSON.stringify(off,null,2)],{type:"application/json"});
+    const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="offerta-odoo.json";a.click();URL.revokeObjectURL(a.href);
+    setOdoo(off.complete.code?"ok":"wait", off.complete.code?"Offerta esportata (JSON).":"Offerta esportata, ma alcuni cabinet non hanno il codice Odoo: compilalo nel pannello per l'import automatico.");
+  });
+  $("odooSend").addEventListener("click",async ()=>{
+    const off=buildOffer(); if(!off) return;
+    if(!off.complete.code){ setOdoo("err","Mancano dei codici Odoo su alcuni cabinet: compilali nel pannello Amministrazione prima di inviare."); return; }
+    setOdoo("wait","Invio a Odoo in corso…");
+    try{
+      off.previewPng = wallPreviewPng();  // disegno tecnico per il campo note
+      const res=await fetch(ODOO_ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(off)});
+      const data=await res.json().catch(()=>({}));
+      if(res.ok && data.ok){ setOdoo("ok","Offerta creata in Odoo"+(data.name?(" — "+data.name):"")+(data.url?(' · <a href="'+data.url+'" target="_blank" rel="noopener">apri</a>'):"")); }
+      else setOdoo("err","Errore Odoo: "+((data&&data.error)||("HTTP "+res.status))+".");
+    }catch(err){ setOdoo("err","Connettore non raggiungibile: verifica di aver deployato la Netlify Function odoo-quote."); }
+  });
+  document.addEventListener("keydown",e=>{ if(e.key==="Escape") closeAdmin(); });
+
+  function updateSourceNote(){
+    const el=$("srcNote"); if(!el) return;
+    if(catalogSource==="cloud"){ el.textContent="Catalogo salvato sul sito · modificabile dal pannello (Salva sul sito)"; el.style.color="var(--ok)"; return; }
+    el.textContent = catalogSource==="site"
+      ? "Catalogo caricato dal sito (catalog.json)"
+      : "Catalogo locale · per pubblicarlo a tutti, salvalo sul sito o esporta catalog.json";
+    el.style.color = (catalogSource==="site"||catalogSource==="cloud") ? "var(--ok)" : "var(--muted-2)";
+  }
+
+  async function boot(){
+    let loaded=false;
+    // 1) catalogo salvato lato server (persistente, aggiornabile dal pannello)
+    try{
+      const r=await fetch("/.netlify/functions/get-catalog",{cache:"no-store"});
+      if(r.ok){ const j=await r.json(); if(j && Array.isArray(j.products) && j.products.length){ DB=normalizeDB(j); migrate(); catalogSource="cloud"; loaded=true; } }
+    }catch(e){}
+    // 2) fallback: catalog.json statico
+    if(!loaded){
+      try{
+        const res=await fetch("catalog.json?ts="+Date.now(),{cache:"no-store"});
+        if(res.ok){ const j=await res.json(); if(j && Array.isArray(j.products) && j.products.length){ DB=normalizeDB(j); migrate(); catalogSource="site"; loaded=true; } }
+      }catch(e){}
+    }
+    if(loaded){ S.productId=DB.products[0]?DB.products[0].id:null; S.selWc=S.selHc=null; }
+    updateSourceNote();
+    fillProductSelect(); render();
+  }
+
+  S.productId = DB.products[0] ? DB.products[0].id : null;
+  updateSourceNote();
+  fillProductSelect();
+  render();
+  boot();
+})();
+</script>
+</body>
+</html>
