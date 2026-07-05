@@ -257,6 +257,7 @@
   .pdesc label{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.03em;text-transform:uppercase;color:var(--muted-2);margin-bottom:5px}
   .pdesc input{width:100%;padding:9px 11px;font-size:13px}
   .pdesc textarea{width:100%;padding:9px 11px;font-size:13px;font-family:var(--disp);resize:vertical;line-height:1.5}
+  .pwsq input{max-width:160px}
 
   .pcrow{display:grid;grid-template-columns:74px 90px 1fr;gap:8px;align-items:center;margin-bottom:7px}
   .pcrow .pclab{font-family:var(--mono);font-size:12px;color:var(--muted)}
@@ -416,7 +417,7 @@
         <p class="eyebrow">Specifiche &amp; preventivo</p>
         <div class="spec">
           <div class="box"><div class="k">Peso totale</div><div class="v" id="tWeight">—</div><div class="partial" id="pWeight" hidden>dati parziali</div></div>
-          <div class="box"><div class="k">Assorbimento</div><div class="v" id="tPower">—</div><div class="partial" id="pPower" hidden>dati parziali</div></div>
+          <div class="box"><div class="k">Consumo medio</div><div class="v" id="tPower">—</div><div class="partial" id="pPower" hidden>dati parziali</div></div>
           <div class="box"><div class="k">Moduli totali</div><div class="v" id="tModules">—</div><div class="partial" id="pModules" hidden>dati parziali</div></div>
           <div class="box price"><div class="k">Prezzo totale</div><div class="v" id="tPrice">—</div><div class="partial" id="pPrice" hidden>dati parziali</div></div>
         </div>
@@ -621,11 +622,12 @@
           name:p.name||"Prodotto",
           desc:(typeof p.desc==="string"?p.desc:undefined),
           selling:(typeof p.selling==="string"?p.selling:undefined),
+          wPerSqm:(+p.wPerSqm>0?+p.wPerSqm:undefined),
           modW, modH,
           resolutions:(Array.isArray(p.resolutions)?p.resolutions:[]).filter(r=>r&&r.pitch>0).map(r=>({id:r.id||rid(),label:(r.label||("P"+r.pitch)),pitch:r.pitch})),
           cabinets:cabs.map(c=>({
             w:c.w,h:c.h,
-            weight:(c.weight>0?c.weight:undefined),power:(c.power>0?c.power:undefined),
+            weight:(c.weight>0?c.weight:undefined),
             price:(c.price>0?c.price:undefined), prices:normPrices(c.prices),
             code:(typeof c.code==="string"&&c.code.trim()?c.code.trim():undefined), codes:normCodes(c.codes),
             modQty:(c.modQty>0?c.modQty:undefined),color:(typeof c.color==="string"?c.color:undefined)
@@ -806,14 +808,15 @@
     const totalW=S.selWc.total, totalH=S.selHc.total;
     const cols=expand(S.selWc.counts), rows=expand(S.selHc.counts);
     const cw={};cols.forEach(w=>cw[w]=(cw[w]||0)+1); const rh={};rows.forEach(h=>rh[h]=(rh[h]||0)+1);
-    let pMax=0,wSum=0,anyP=false,anyW=false,cnt=0;
+    let wSum=0,anyW=false,cnt=0;
     Object.keys(cw).forEach(w=>Object.keys(rh).forEach(h=>{
       const q=cw[w]*rh[h]; if(!q) return; cnt+=q; const cab=findCab(p,+w,+h); if(!cab) return;
-      if(cab.power>0){pMax+=q*cab.power;anyP=true;} if(cab.weight>0){wSum+=q*cab.weight;anyW=true;}
+      if(cab.weight>0){wSum+=q*cab.weight;anyW=true;}
     }));
+    const area=(totalW*totalH)/1e6;
+    const anyP=p.wPerSqm>0; const pAvg=anyP?p.wPerSqm*area:0;
     const pitch=S.res?S.res.pitch:0;
     const px=pitch>0?Math.round(totalW/pitch):0, py=pitch>0?Math.round(totalH/pitch):0;
-    const area=(totalW*totalH)/1e6;
     const img=wallPreviewPng();
     const obj=($("odooObject")&&$("odooObject").value.trim())||"";
     const baseDesc=(p.desc&&p.desc.trim())||p.name;
@@ -826,7 +829,7 @@
     R("Superficie", area.toFixed(2).replace(".",",")+" m²");
     R("Numero cabinet", cnt+" ("+cols.length+"×"+rows.length+")");
     if(anyW) R("Peso totale", fmt(wSum)+" kg");
-    if(anyP) R("Assorbimento", (pMax/1000).toFixed(2).replace(".",",")+" kW picco · ~"+((pMax*0.4)/1000).toFixed(2).replace(".",",")+" kW medio");
+    if(anyP) R("Consumo medio", (pAvg/1000).toFixed(2).replace(".",",")+" kW · "+p.wPerSqm+" W/m²");
     if(pitch>0) R("Distanza di visione", "nitida da ~"+String(pitch).replace(".",",")+" m · resa ottimale "+String(pitch).replace(".",",")+"–"+(pitch*3).toFixed(0)+" m");
     const selling=(p.selling&&p.selling.trim())
       ? '<div class="sf"><h3>Punti di forza</h3><ul>'+p.selling.split(/\n+/).filter(Boolean).map(l=>'<li>'+l.replace(/^[-•]\s*/,"").replace(/</g,"&lt;")+'</li>').join("")+'</ul></div>'
@@ -1057,14 +1060,15 @@
     const px=pitch>0?Math.round(totalW/pitch):0, py=pitch>0?Math.round(totalH/pitch):0;
     const totPx=px*py;
     const area=(totalW*totalH)/1e6; // m²
-    // potenza e peso totali
+    // potenza (media, da W/m² prodotto) e peso totale
     const cw={};cols.forEach(w=>cw[w]=(cw[w]||0)+1); const rh={};rows.forEach(h=>rh[h]=(rh[h]||0)+1);
-    let pMax=0,wSum=0,anyP=false,anyW=false;
+    let wSum=0,anyW=false;
     Object.keys(cw).forEach(w=>Object.keys(rh).forEach(h=>{
       const q=cw[w]*rh[h]; if(!q) return; const cab=findCab(product,+w,+h); if(!cab) return;
-      if(cab.power>0){ pMax+=q*cab.power; anyP=true; } if(cab.weight>0){ wSum+=q*cab.weight; anyW=true; }
+      if(cab.weight>0){ wSum+=q*cab.weight; anyW=true; }
     }));
-    const pAvg=pMax*0.4; // assorbimento medio ~40% del picco (regola pratica)
+    const anyP=product.wPerSqm>0;
+    const pAvg=anyP?product.wPerSqm*area:0; // consumo medio totale (W)
     const card=(k,v,sub)=>{ const b=document.createElement("div");b.className="sbox";
       b.innerHTML='<div class="sk">'+k+'</div><div class="sv">'+v+'</div>'+(sub?'<div class="ssub">'+sub+'</div>':''); return b; };
     // distanza di visione
@@ -1079,7 +1083,7 @@
       grid.appendChild(card("Risoluzione", fmt(px)+"×"+fmt(py)+" px", (totPx/1e6).toFixed(2).replace(".",",")+" Mpx"+(equiv?" · "+equiv:"")));
     }
     grid.appendChild(card("Superficie", area.toFixed(2).replace(".",",")+" m²", cols.length*rows.length+" cabinet"));
-    if(anyP) grid.appendChild(card("Consumo", (pMax/1000).toFixed(2).replace(".",",")+" kW picco", "~"+(pAvg/1000).toFixed(2).replace(".",",")+" kW medio"));
+    if(anyP) grid.appendChild(card("Consumo", (pAvg/1000).toFixed(2).replace(".",",")+" kW medio", product.wPerSqm+" W/m²"));
     if(anyW) grid.appendChild(card("Peso totale", fmt(wSum)+" kg", (wSum/area).toFixed(0)+" kg/m²"));
 
     // costo elettrico annuo
@@ -1308,18 +1312,19 @@
 
     const cw={};cols.forEach(w=>cw[w]=(cw[w]||0)+1);
     const rh={};rows.forEach(h=>rh[h]=(rh[h]||0)+1);
-    const anyW=product.cabinets.some(c=>c.weight>0), anyP=product.cabinets.some(c=>c.power>0),
+    const anyW=product.cabinets.some(c=>c.weight>0), anyP=product.wPerSqm>0,
           anyPr=hasAnyPrice(product), anyMod=product.cabinets.some(c=>c.modQty>0);
+    const areaM2=(totalW*totalH)/1e6;
+    const pSumAvg = anyP ? product.wPerSqm*areaM2 : 0; // consumo medio totale (W)
 
     const list=$("bomList");list.innerHTML="";
-    let tot=0,wSum=0,pSum=0,prSum=0,modSum=0, wPart=false,pPart=false,prPart=false,modPart=false;
+    let tot=0,wSum=0,prSum=0,modSum=0, wPart=false,prPart=false,modPart=false;
     Object.keys(cw).map(Number).sort((a,b)=>b-a).forEach(w=>{
       Object.keys(rh).map(Number).sort((a,b)=>b-a).forEach(h=>{
         const count=cw[w]*rh[h]; if(!count) return; tot+=count;
         const key=w+"x"+h, cab=findCab(product,w,h), ok=!!cab;
         const unitPrice = cab ? priceOf(cab) : 0;
         if(anyW){ if(cab&&cab.weight>0) wSum+=count*cab.weight; else wPart=true; }
-        if(anyP){ if(cab&&cab.power>0) pSum+=count*cab.power; else pPart=true; }
         if(anyPr){ if(unitPrice>0) prSum+=count*unitPrice; else prPart=true; }
         if(anyMod){ if(cab&&cab.modQty>0) modSum+=count*cab.modQty; else modPart=true; }
         const modTxt=(cab&&cab.modQty>0)?' · '+cab.modQty+' mod'+(product.modW>0&&product.modH>0?' '+product.modW+'×'+product.modH:''):'';
@@ -1339,8 +1344,8 @@
     if(showSpec){
       $("tWeight").innerHTML = anyW ? (wSum.toFixed(1).replace(".",",")+' <small>kg</small>') : '<small>—</small>';
       $("pWeight").hidden=!(anyW&&wPart);
-      $("tPower").innerHTML = anyP ? (fmt(pSum)+' <small>W · '+(pSum/1000).toFixed(2).replace(".",",")+' kW</small>') : '<small>—</small>';
-      $("pPower").hidden=!(anyP&&pPart);
+      $("tPower").innerHTML = anyP ? (fmt(Math.round(pSumAvg))+' <small>W medio · '+(pSumAvg/1000).toFixed(2).replace(".",",")+' kW</small>') : '<small>—</small>';
+      $("pPower").hidden=true;
       $("tModules").innerHTML = anyMod ? (fmt(modSum)+' <small>moduli</small>') : '<small>—</small>';
       $("pModules").hidden=!(anyMod&&modPart);
       $("tPrice").innerHTML = anyPr ? eur(prSum) : '<small>—</small>';
@@ -1482,7 +1487,6 @@
   function optionalGrid(obj){
     const g=document.createElement("div");g.className="cabgrid";
     g.appendChild(mkField("Peso kg",obj,"weight"));
-    g.appendChild(mkField("Assorb. W",obj,"power"));
     g.appendChild(mkField("N° moduli",obj,"modQty"));
     return g;
   }
@@ -1553,6 +1557,13 @@
       const di=document.createElement("input");di.type="text";di.placeholder="es. Schermo ledwall da esterno";if(p.desc)di.value=p.desc;
       di.addEventListener("input",()=>p.desc=(di.value||undefined));
       dwrap.appendChild(dl);dwrap.appendChild(di);box.appendChild(dwrap);
+
+      // --- consumo medio per metro quadro (W/m²) a livello prodotto ---
+      const cwrap=document.createElement("div");cwrap.className="pdesc pwsq";
+      const cl=document.createElement("label");cl.textContent="Consumo medio W/m² (usato per calcolare l'assorbimento della parete)";
+      const ci=document.createElement("input");ci.type="number";ci.min="0";ci.step="any";ci.placeholder="es. 250";if(p.wPerSqm>0)ci.value=p.wPerSqm;
+      ci.addEventListener("input",()=>p.wPerSqm=(numOrUndef(ci.value)));
+      cwrap.appendChild(cl);cwrap.appendChild(ci);box.appendChild(cwrap);
 
       // --- punti di forza (uno per riga) usati nella card Argomenti di vendita ---
       const swrap=document.createElement("div");swrap.className="pdesc";
