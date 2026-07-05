@@ -792,6 +792,34 @@
   }
   function setOdoo(cls,html){ const el=$("odooStatus"); if(!el) return; el.className="odoostatus "+cls; el.innerHTML=html; }
 
+  // Rasterizza l'anteprima SVG della parete in un PNG (lato lungo ~1200px) -> dataURL base64.
+  function wallPreviewPng(){
+    return new Promise((resolve)=>{
+      const svg=$("stage").querySelector("svg");
+      if(!svg){ resolve(null); return; }
+      const vb=(svg.getAttribute("viewBox")||"").split(/\s+/).map(Number);
+      const w0=vb[2]||svg.clientWidth||800, h0=vb[3]||svg.clientHeight||600;
+      const TARGET=1200, scale=Math.min(TARGET/Math.max(w0,h0), 3);
+      const W=Math.round(w0*scale), H=Math.round(h0*scale);
+      const clone=svg.cloneNode(true);
+      clone.setAttribute("width",W); clone.setAttribute("height",H);
+      const xml=new XMLSerializer().serializeToString(clone);
+      const svg64="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(xml);
+      const img=new Image();
+      img.onload=()=>{
+        try{
+          const cv=document.createElement("canvas"); cv.width=W; cv.height=H;
+          const ctx=cv.getContext("2d");
+          ctx.fillStyle="#0b0f14"; ctx.fillRect(0,0,W,H); // sfondo scuro come il configuratore
+          ctx.drawImage(img,0,0,W,H);
+          resolve(cv.toDataURL("image/png"));
+        }catch(e){ resolve(null); }
+      };
+      img.onerror=()=>resolve(null);
+      img.src=svg64;
+    });
+  }
+
   function fillProductSelect(){
     const sel=$("inProduct"); sel.innerHTML="";
     DB.products.forEach(p=>{ const o=document.createElement("option"); o.value=p.id; o.textContent=p.name; sel.appendChild(o); });
@@ -1204,26 +1232,37 @@
 
   function renderRatioSuggest(eW,eH,totalW,totalH){
     const host=$("ratioSuggest");
-    const curDev=Math.abs(totalW/totalH - R169);
-    if(curDev<=0.02){ host.hidden=true; return; }
-    const hA=eH.solve(totalW/R169).sum, devA=Math.abs(totalW/hA - R169);
-    const wB=eW.solve(totalH*R169).sum, devB=Math.abs(wB/totalH - R169);
-    let W,H,dev;
-    if(devA<=devB){ W=totalW; H=hA; dev=devA; } else { W=wB; H=totalH; dev=devB; }
-    if(dev>=curDev-1e-9 || (W===totalW&&H===totalH)){ host.hidden=true; return; }
-    host.hidden=false; host.innerHTML="";
-    const lbl=document.createElement("span");lbl.className="lbl";lbl.textContent="Più vicino al 16:9:";
-    const btn=document.createElement("button");
-    btn.textContent=fmt(W)+" × "+fmt(H)+" mm  ("+(W/H).toFixed(2).replace(".",",")+":1)";
-    btn.addEventListener("click",()=>{
-      const p=currentProduct();
-      const vg=validGridFixed(p,"w",W,W,H,eW,eH);
-      if(vg){ S.selWc={total:vg.wComp.total,counts:vg.wComp.counts}; S.selHc={total:vg.hComp.total,counts:vg.hComp.counts}; }
-      else { S.selWc=compFromTotal(eW,W); S.selHc=compFromTotal(eH,H); }
-      S.selKey=S.productId+"|"+S.reqW+"x"+S.reqH;
-      render();
+    const RATIOS=[{lbl:"16:9",r:16/9},{lbl:"9:16",r:9/16},{lbl:"4:3",r:4/3},{lbl:"3:4",r:3/4}];
+    host.innerHTML="";
+    const lbl=document.createElement("span");lbl.className="lbl";lbl.textContent="Proporzioni:";
+    host.appendChild(lbl);
+    let shown=0;
+    RATIOS.forEach(R=>{
+      const curDev=Math.abs(totalW/totalH - R.r);
+      // opzione A: fisso la base, adatto l'altezza; opzione B: fisso l'altezza, adatto la base
+      const hA=eH.solve(totalW/R.r).sum, devA=hA?Math.abs(totalW/hA - R.r):Infinity;
+      const wB=eW.solve(totalH*R.r).sum, devB=wB?Math.abs(wB/totalH - R.r):Infinity;
+      let W,H,dev;
+      if(devA<=devB){ W=totalW; H=hA; dev=devA; } else { W=wB; H=totalH; dev=devB; }
+      if(!W||!H) return;
+      // salta se già in proporzione o se non migliora
+      if(curDev<=0.02) return;
+      if(dev>=curDev-1e-9 || (W===totalW&&H===totalH)) return;
+      const btn=document.createElement("button");
+      btn.type="button";
+      btn.innerHTML='<b>'+R.lbl+'</b> · '+fmt(W)+" × "+fmt(H)+" mm";
+      btn.setAttribute("aria-label","Proporzione "+R.lbl+": "+fmt(W)+" per "+fmt(H)+" mm");
+      btn.addEventListener("click",()=>{
+        const p=currentProduct();
+        const vg=validGridFixed(p,"w",W,W,H,eW,eH);
+        if(vg){ S.selWc={total:vg.wComp.total,counts:vg.wComp.counts}; S.selHc={total:vg.hComp.total,counts:vg.hComp.counts}; }
+        else { S.selWc=compFromTotal(eW,W); S.selHc=compFromTotal(eH,H); }
+        S.selKey=S.productId+"|"+S.reqW+"x"+S.reqH;
+        render();
+      });
+      host.appendChild(btn); shown++;
     });
-    host.appendChild(lbl); host.appendChild(btn);
+    host.hidden = shown===0;
   }
 
   // ================= AMMINISTRAZIONE =================
@@ -1492,6 +1531,7 @@
     if(!off.complete.code){ setOdoo("err","Mancano dei codici Odoo su alcuni cabinet: compilali nel pannello Amministrazione prima di inviare."); return; }
     setOdoo("wait","Invio a Odoo in corso…");
     try{
+      off.previewPng = await wallPreviewPng();  // immagine anteprima per il campo note
       const res=await fetch(ODOO_ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(off)});
       const data=await res.json().catch(()=>({}));
       if(res.ok && data.ok){ setOdoo("ok","Offerta creata in Odoo"+(data.name?(" — "+data.name):"")+(data.url?(' · <a href="'+data.url+'" target="_blank" rel="noopener">apri</a>'):"")); }
