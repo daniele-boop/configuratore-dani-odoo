@@ -835,7 +835,7 @@
     const html='<!DOCTYPE html><html lang="it"><head><meta charset="utf-8"><title>Scheda tecnica — '+esc(baseDesc)+'</title>'+
       '<style>'+
       '*{box-sizing:border-box;margin:0;padding:0}'+
-      'body{font-family:Arial,Helvetica,sans-serif;color:#1a2330;background:#fff;padding:26px 32px}'+
+      'body{font-family:Arial,Helvetica,sans-serif;color:#1a2330;background:#fff;padding:20mm 18mm}'+
       '.hd{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #19aae9;padding-bottom:14px}'+
       '.hd img{height:56px}'+
       '.hd .co{text-align:right;font-size:10.5px;color:#5b6675;line-height:1.55}'+
@@ -852,7 +852,7 @@
       '.sf li::before{content:"›";position:absolute;left:4px;color:#19aae9;font-weight:700}'+
       '.ft{margin-top:26px;padding-top:12px;border-top:1px solid #e2e8ef;font-size:10px;color:#8a93a1;text-align:center;line-height:1.6}'+
       '.note{margin-top:14px;font-size:10.5px;color:#8a93a1;font-style:italic}'+
-      '@media print{body{padding:0}@page{margin:16mm}}'+
+      '@media print{body{padding:0}@page{margin:20mm 18mm}}'+
       '</style></head><body>'+
       '<div class="hd"><img src="'+NSE_LOGO+'" alt="NSELED"><div class="co"><b>'+esc(NSE_INFO.name)+'</b><br>'+esc(NSE_INFO.addr)+'<br>'+esc(NSE_INFO.contacts)+'</div></div>'+
       '<div class="ti">'+esc(obj||("Scheda tecnica — "+baseDesc))+'</div>'+
