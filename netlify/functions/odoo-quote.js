@@ -133,7 +133,28 @@ exports.handler = async (event) => {
     const name = info && info[0] ? info[0].name : ("SO/" + orderId);
     const url = `${ODOO_URL}/odoo/sales/${orderId}`;
 
-    return { statusCode: 200, headers: cors, body: JSON.stringify({ ok: true, order_id: orderId, name, url }) };
+    // allega le schede tecniche (PNG) come ir.attachment collegati al preventivo
+    const serial = (offer.serial && String(offer.serial).trim()) ? String(offer.serial).trim() : String(orderId);
+    let attached = 0;
+    const attach = async (dataUrl, label) => {
+      if (typeof dataUrl !== "string" || dataUrl.indexOf("base64,") < 0) return;
+      const b64 = dataUrl.substring(dataUrl.indexOf("base64,") + 7);
+      try {
+        await kw(uid, "ir.attachment", "create", [{
+          name: `Scheda_${label}_${serial}.png`,
+          type: "binary",
+          datas: b64,
+          res_model: "sale.order",
+          res_id: orderId,
+          mimetype: "image/png"
+        }]);
+        attached++;
+      } catch (e) { /* allegato non bloccante */ }
+    };
+    await attach(offer.sheetItaPng, "ITA");
+    await attach(offer.sheetEngPng, "ENG");
+
+    return { statusCode: 200, headers: cors, body: JSON.stringify({ ok: true, order_id: orderId, name, url, attached }) };
   } catch (err) {
     return { statusCode: 500, headers: cors, body: JSON.stringify({ ok: false, error: String(err.message || err) }) };
   }
