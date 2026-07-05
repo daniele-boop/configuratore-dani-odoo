@@ -18,8 +18,6 @@
 //   ODOO_PARTNER_ID    (opzionale) id di un cliente esistente da usare sempre
 //   ODOO_PARTNER_NAME  (opzionale) nome del cliente standard segnaposto,
 //                      default "Cliente da definire" (creato al primo utilizzo)
-//   ODOO_OBJECT_FIELD  (opzionale) nome tecnico del campo personalizzato "Oggetto"
-//                      (es. x_studio_oggetto). Se impostato, l'oggetto viene scritto anche lì.
 //   ALLOW_ORIGIN       (opzionale) origine consentita per il CORS, es. https://tuosito.netlify.app
 //
 // NOTA: JSON-RPC/XML-RPC sono in deprecazione in Odoo; quando migrerai, il connettore
@@ -27,7 +25,7 @@
 
 const {
   ODOO_URL, ODOO_DB, ODOO_LOGIN, ODOO_API_KEY,
-  ODOO_PARTNER_ID, ODOO_PARTNER_NAME, ODOO_OBJECT_FIELD, ALLOW_ORIGIN
+  ODOO_PARTNER_ID, ODOO_PARTNER_NAME, ALLOW_ORIGIN
 } = process.env;
 
 async function rpc(service, method, args) {
@@ -86,15 +84,10 @@ exports.handler = async (event) => {
       partnerId = ex.length ? ex[0].id : await kw(uid, "res.partner", "create", [{ name, is_company: true, customer_rank: 1 }]);
     }
 
-    // 3) righe: prima una RIGA SEZIONE con la descrizione, poi i prodotti per codice.
+    // 3) risolvi i prodotti dai codici (default_code) e prepara le righe.
     //    Il prezzo NON viene forzato: lo calcola Odoo dal listino del prodotto/cliente.
     const orderLines = [];
     const missing = [];
-    const sectionText = (offer.section || "").trim();
-    if (sectionText) {
-      // display_type 'line_section' = riga di sezione (intestazione) in Odoo
-      orderLines.push([0, 0, { display_type: "line_section", name: sectionText }]);
-    }
     for (const l of lines) {
       const code = (l.code || "").trim();
       if (!code) { missing.push(l.label || "(senza codice)"); continue; }
@@ -108,26 +101,19 @@ exports.handler = async (event) => {
     }
 
     // 4) crea la quotation (sale.order) in bozza
-    const summary = sectionText || (`Configuratore parete LED — ${offer.product || ""} · ${offer.size ? offer.size.w + "×" + offer.size.h + " mm" : ""}` +
-                 (offer.resolution ? ` · ${offer.resolution.label}` : ""));
-    // Oggetto del preventivo: usa quello inserito nel configuratore, altrimenti il riepilogo
-    const orderRef = (offer.object && offer.object.trim()) ? offer.object.trim() : summary;
-    // Campo "Terms and conditions" (note): immagine tecnica incorporata
-    let note = "";
+    const summary = `Configuratore parete LED — ${offer.product || ""} · ${offer.size ? offer.size.w + "×" + offer.size.h + " mm" : ""}` +
+                 (offer.resolution ? ` · ${offer.resolution.label}` : "");
+    // Campo "Terms and conditions" (note): riepilogo + immagine anteprima incorporata
+    let note = `<p>${summary}</p>`;
     if (typeof offer.previewPng === "string" && offer.previewPng.startsWith("data:image")) {
-      note += `<p><img src="${offer.previewPng}" alt="Schema parete LED" style="max-width:100%;height:auto;"/></p>`;
+      note += `<p><img src="${offer.previewPng}" alt="Anteprima parete LED" style="max-width:100%;height:auto;"/></p>`;
     }
-    const orderVals = {
+    const orderId = await kw(uid, "sale.order", "create", [{
       partner_id: partnerId,
       order_line: orderLines,
-      client_order_ref: orderRef,
+      client_order_ref: summary,
       note: note
-    };
-    // se è configurato il campo personalizzato "Oggetto", scrivilo anche lì
-    if (ODOO_OBJECT_FIELD && offer.object && offer.object.trim()) {
-      orderVals[ODOO_OBJECT_FIELD] = offer.object.trim();
-    }
-    const orderId = await kw(uid, "sale.order", "create", [orderVals]);
+    }]);
 
     const info = await kw(uid, "sale.order", "read", [[orderId]], { fields: ["name"] });
     const name = info && info[0] ? info[0].name : ("SO/" + orderId);
