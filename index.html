@@ -281,6 +281,10 @@
   .odoostatus{font-family:var(--mono);font-size:11.5px;margin-top:9px;line-height:1.5}
   .odoostatus a{color:#37c3d1}
   .odoostatus.ok{color:var(--ok)} .odoostatus.err{color:var(--danger)} .odoostatus.wait{color:var(--muted)}
+  .recall{padding-bottom:16px}
+  .recallrow{display:flex;gap:8px;align-items:center}
+  .recallrow input{flex:1;min-width:0;padding:10px 12px;font-family:var(--mono);font-size:13px;text-transform:uppercase;letter-spacing:.04em}
+  .recallrow .btn{flex:0 0 auto}
 
   .salesgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
   .sbox{background:var(--panel-2);border:1px solid var(--line-soft);border-radius:11px;padding:12px 14px}
@@ -355,6 +359,15 @@
   <div class="grid">
     <!-- CONTROLLI -->
     <div>
+      <section class="card recall">
+        <p class="eyebrow">Richiama configurazione</p>
+        <div class="recallrow">
+          <input id="cfgLoad" type="text" placeholder="es. CFG-0002" spellcheck="false" autocomplete="off">
+          <button class="btn ghost sm" id="cfgLoadBtn">Carica</button>
+        </div>
+        <div class="odoostatus" id="cfgLoadMsg"></div>
+      </section>
+
       <section class="card">
         <p class="eyebrow">Prodotto e misura</p>
         <label class="fld">
@@ -1875,6 +1888,17 @@
   $("modToggle").addEventListener("click",()=>{ S.showModules=!S.showModules; render(); });
   $("clientSheet").addEventListener("click",()=>{ const off=buildOffer(); if(off) buildClientSheet(); });
   function setCfg(cls,html){ const el=$("cfgStatus"); if(!el) return; el.className="odoostatus "+cls; el.innerHTML=html; }
+  function setLoadMsg(cls,html){ const el=$("cfgLoadMsg"); if(!el) return; el.className="odoostatus "+cls; el.innerHTML=html; }
+  async function doRecall(){
+    const id=normCfgId($("cfgLoad").value);
+    if(!id){ setLoadMsg("err","Inserisci un codice, es. CFG-0002."); return; }
+    setLoadMsg("wait","Caricamento "+id+"…");
+    const res=await loadConfig(id);
+    if(res&&res.ok){ setLoadMsg("ok","Configurazione "+id+" caricata."); render(); }
+    else setLoadMsg("err",(res&&res.error)||"Configurazione non trovata.");
+  }
+  $("cfgLoadBtn").addEventListener("click",doRecall);
+  $("cfgLoad").addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); doRecall(); } });
   $("cfgSave").addEventListener("click",async ()=>{
     const p=currentProduct(); if(!p||!S.selWc||!S.selHc){ setCfg("err","Configura prima una parete."); return; }
     const snap={
@@ -1951,9 +1975,10 @@
   async function loadConfig(id){
     try{
       const r=await fetch("/.netlify/functions/get-config?id="+encodeURIComponent(id),{cache:"no-store"});
-      if(!r.ok) return;
+      if(r.status===404) return {ok:false,error:"Codice non trovato."};
+      if(!r.ok) return {ok:false,error:"Errore server ("+r.status+")."};
       const snap=await r.json();
-      if(!snap||!snap.productId||!snap.selWc||!snap.selHc) return;
+      if(!snap||!snap.productId||!snap.selWc||!snap.selHc) return {ok:false,error:"Configurazione non valida."};
       // sovrascrive prodotto e controller con la copia congelata (prezzi originali)
       if(snap.product&&snap.product.id){ const i=DB.products.findIndex(p=>p.id===snap.product.id); if(i>=0) DB.products[i]=snap.product; else DB.products.push(snap.product); }
       if(Array.isArray(snap.controllers)){ if(!Array.isArray(DB.controllers)) DB.controllers=[]; snap.controllers.forEach(sc=>{ const i=DB.controllers.findIndex(c=>c.id===sc.id); if(i>=0) DB.controllers[i]=sc; else DB.controllers.push(sc); }); }
@@ -1967,8 +1992,10 @@
       fillPitchSelect(); if(snap.resId) $("inPitch").value=snap.resId;
       if(snap.object&&$("odooObject")) $("odooObject").value=snap.object;
       if($("cfgStatus")){ $("cfgStatus").className="odoostatus ok"; $("cfgStatus").innerHTML="Configurazione <b>"+(S.serial||id)+"</b> caricata"+(snap.createdAt?" · "+new Date(snap.createdAt).toLocaleDateString("it-IT"):"")+"."; }
-    }catch(e){}
+      return {ok:true};
+    }catch(e){ return {ok:false,error:"Connettore non raggiungibile."}; }
   }
+  function normCfgId(v){ v=(v||"").trim().toUpperCase(); const n=v.replace(/[^\d]/g,""); if(n&&/^(CFG-?)?\d+$/.test(v)) return "CFG-"+n.padStart(4,"0"); return v; }
 
   S.productId = DB.products[0] ? DB.products[0].id : null;
   updateSourceNote();
