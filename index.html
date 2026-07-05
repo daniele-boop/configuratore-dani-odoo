@@ -2019,10 +2019,17 @@
       // schede tecniche complete (ITA + ENG) come PNG da allegare
       try{ off.sheetItaPng = await sheetToPng("it"); }catch(e){ off.sheetItaPng=null; }
       try{ off.sheetEngPng = await sheetToPng("en"); }catch(e){ off.sheetEngPng=null; }
+      const genOk = !!(off.sheetItaPng||off.sheetEngPng);
       off.serial = S.serial || null;
       const res=await fetch(ODOO_ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(off)});
       const data=await res.json().catch(()=>({}));
-      if(res.ok && data.ok){ setOdoo("ok","Offerta creata in Odoo"+(data.name?(" — "+data.name):"")+(data.url?(' · <a href="'+data.url+'" target="_blank" rel="noopener">apri</a>'):"")+(data.attached?" · schede allegate":"")); }
+      if(res.ok && data.ok){
+        let extra="";
+        if(data.attached>0) extra=" · "+data.attached+" schede allegate";
+        else if(!genOk) extra=" · schede NON generate (html2canvas non caricato)";
+        else if(data.attachErrors&&data.attachErrors.length) extra=" · allegato non riuscito: "+data.attachErrors[0];
+        setOdoo("ok","Offerta creata in Odoo"+(data.name?(" — "+data.name):"")+(data.url?(' · <a href="'+data.url+'" target="_blank" rel="noopener">apri</a>'):"")+extra);
+      }
       else setOdoo("err","Errore Odoo: "+((data&&data.error)||("HTTP "+res.status))+".");
     }catch(err){ setOdoo("err","Connettore non raggiungibile: verifica di aver deployato la Netlify Function odoo-quote."); }
   });
