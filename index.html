@@ -459,10 +459,12 @@
           <input type="text" id="odooObject" placeholder="es. Fornitura parete LED — Cliente XYZ">
         </div>
         <div class="odoobar">
+          <button class="btn ghost sm" id="cfgSave">Salva configurazione (n° serie)</button>
           <button class="btn ghost sm" id="clientSheet">Scheda cliente (PDF)</button>
           <button class="btn ghost sm" id="odooExport">Esporta offerta (JSON)</button>
           <button class="btn primary sm" id="odooSend">Invia a Odoo</button>
         </div>
+        <div class="odoostatus" id="cfgStatus"></div>
         <div class="odoostatus" id="odooStatus"></div>
       </section>
     </div>
@@ -947,13 +949,13 @@
       '.sf li::before{content:"\\203A";position:absolute;left:4px;color:#19aae9;font-weight:700}'+
       '.ft{margin-top:16px;padding-top:10px;border-top:1px solid #e2e8ef;font-size:9.5px;color:#8a93a1;text-align:center;line-height:1.6}'+
       '.note{margin-top:10px;font-size:9.5px;color:#8a93a1;font-style:italic}'+
-      '@media print{body{padding:0}@page{margin:12mm}}'+
+      '@media print{body{padding:0}@page{size:A4 landscape;margin:10mm}}'+
       '</style></head><body>'+
       '<div class="hd"><img src="'+NSE_LOGO+'" alt="NSELED"><div class="ttl">SCHEDA TECNICA</div></div>'+
       '<div class="cols">'+
         '<div class="cl">'+
           '<span class="pname">'+esc(obj||baseDesc)+'</span>'+
-          '<div class="ref">'+esc(NSE_INFO.name)+' · '+dateStr+' · '+fmt(totalW)+"×"+fmt(totalH)+' mm'+(pitch>0?" · "+(S.res.label||""):"")+'</div>'+
+          '<div class="ref">'+esc(NSE_INFO.name)+' · '+dateStr+(S.serial?" · "+esc(S.serial):"")+' · '+fmt(totalW)+"×"+fmt(totalH)+' mm'+(pitch>0?" · "+(S.res.label||""):"")+'</div>'+
           '<div class="icons">'+icons.join("")+'</div>'+
           (img?'<div class="img"><img src="'+img+'" alt="Schema parete"></div>':'')+
           (p.photo?'<div class="photo"><img src="'+p.photo+'" alt="'+esc(baseDesc)+'"></div>':'')+
@@ -1153,7 +1155,11 @@
     renderAltWalls(p,eW,eH,S.reqW,S.reqH);
     renderControllers();
     renderSales(p,cols,rows,totalW,totalH);
+    // il numero di serie resta valido finché la configurazione non cambia
+    const sig=cfgSignature();
+    if(S.serial){ if(!S.serialSig){ S.serialSig=sig; } else if(S.serialSig!==sig){ S.serial=null; S.serialSig=null; if($("cfgStatus")){ $("cfgStatus").className="odoostatus"; $("cfgStatus").innerHTML=""; } } }
   }
+  function cfgSignature(){ return S.productId+"|"+S.reqW+"x"+S.reqH+"|"+(S.res?S.res.id:"")+"|"+(S.selWc?S.selWc.total:"")+"x"+(S.selHc?S.selHc.total:"")+"|"+Object.keys(S.selCtrls||{}).sort().map(k=>k+":"+S.selCtrls[k]).join(","); }
 
   function renderSales(product,cols,rows,totalW,totalH){
     const grid=$("salesGrid"); grid.innerHTML="";
@@ -1868,6 +1874,30 @@
   ["enHours","enRate"].forEach(id=>{ const el=$(id); if(el) el.addEventListener("input",render); });
   $("modToggle").addEventListener("click",()=>{ S.showModules=!S.showModules; render(); });
   $("clientSheet").addEventListener("click",()=>{ const off=buildOffer(); if(off) buildClientSheet(); });
+  function setCfg(cls,html){ const el=$("cfgStatus"); if(!el) return; el.className="odoostatus "+cls; el.innerHTML=html; }
+  $("cfgSave").addEventListener("click",async ()=>{
+    const p=currentProduct(); if(!p||!S.selWc||!S.selHc){ setCfg("err","Configura prima una parete."); return; }
+    const snap={
+      productId:S.productId, reqW:S.reqW, reqH:S.reqH,
+      resId:S.res?S.res.id:null,
+      selWc:S.selWc, selHc:S.selHc, selCtrls:S.selCtrls||{},
+      object:($("odooObject")&&$("odooObject").value.trim())||"",
+      product:JSON.parse(JSON.stringify(p)),
+      controllers:JSON.parse(JSON.stringify(DB.controllers||[]))
+    };
+    setCfg("wait","Salvataggio configurazione…");
+    try{
+      const r=await fetch("/.netlify/functions/save-config",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(snap)});
+      const d=await r.json().catch(()=>({}));
+      if(r.ok&&d.ok){
+        S.serial=d.serial; S.serialSig=null;
+        const link=location.origin+location.pathname+"?cfg="+d.serial;
+        setCfg("ok","Configurazione salvata: <b>"+d.serial+'</b> · <a href="'+link+'" target="_blank" rel="noopener">apri link</a> · <a href="#" id="cfgCopy">copia link</a>');
+        const cc=$("cfgCopy"); if(cc) cc.addEventListener("click",(e)=>{ e.preventDefault(); if(navigator.clipboard) navigator.clipboard.writeText(link); cc.textContent="link copiato"; });
+        render();
+      } else setCfg("err","Errore: "+((d&&d.error)||("HTTP "+r.status))+".");
+    }catch(err){ setCfg("err","Connettore non raggiungibile: verifica di aver deployato save-config."); }
+  });
   $("odooExport").addEventListener("click",()=>{
     const off=buildOffer(); if(!off) return;
     const blob=new Blob([JSON.stringify(off,null,2)],{type:"application/json"});
@@ -1912,8 +1942,32 @@
       }catch(e){}
     }
     if(loaded){ S.productId=DB.products[0]?DB.products[0].id:null; S.selWc=S.selHc=null; }
+    const cfgId=new URLSearchParams(location.search).get("cfg");
+    if(cfgId){ await loadConfig(cfgId); }
     updateSourceNote();
     fillProductSelect(); render();
+  }
+
+  async function loadConfig(id){
+    try{
+      const r=await fetch("/.netlify/functions/get-config?id="+encodeURIComponent(id),{cache:"no-store"});
+      if(!r.ok) return;
+      const snap=await r.json();
+      if(!snap||!snap.productId||!snap.selWc||!snap.selHc) return;
+      // sovrascrive prodotto e controller con la copia congelata (prezzi originali)
+      if(snap.product&&snap.product.id){ const i=DB.products.findIndex(p=>p.id===snap.product.id); if(i>=0) DB.products[i]=snap.product; else DB.products.push(snap.product); }
+      if(Array.isArray(snap.controllers)){ if(!Array.isArray(DB.controllers)) DB.controllers=[]; snap.controllers.forEach(sc=>{ const i=DB.controllers.findIndex(c=>c.id===sc.id); if(i>=0) DB.controllers[i]=sc; else DB.controllers.push(sc); }); }
+      S.productId=snap.productId; S.reqW=snap.reqW; S.reqH=snap.reqH;
+      S.selWc=snap.selWc; S.selHc=snap.selHc; S.selCtrls=snap.selCtrls||{};
+      S.serial=snap.serial||id; S.serialSig=null;
+      S.selKey=S.productId+"|"+S.reqW+"x"+S.reqH; // preserva la composizione salvata
+      // popola i campi
+      $("inBase").value=S.reqW||""; $("inHeight").value=S.reqH||"";
+      fillProductSelect(); $("inProduct").value=S.productId;
+      fillPitchSelect(); if(snap.resId) $("inPitch").value=snap.resId;
+      if(snap.object&&$("odooObject")) $("odooObject").value=snap.object;
+      if($("cfgStatus")){ $("cfgStatus").className="odoostatus ok"; $("cfgStatus").innerHTML="Configurazione <b>"+(S.serial||id)+"</b> caricata"+(snap.createdAt?" · "+new Date(snap.createdAt).toLocaleDateString("it-IT"):"")+"."; }
+    }catch(e){}
   }
 
   S.productId = DB.products[0] ? DB.products[0].id : null;
