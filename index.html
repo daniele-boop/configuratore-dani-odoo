@@ -473,7 +473,8 @@
         </div>
         <div class="odoobar">
           <button class="btn ghost sm" id="cfgSave">Salva configurazione (n° serie)</button>
-          <button class="btn ghost sm" id="clientSheet">Scheda cliente (PDF)</button>
+          <button class="btn ghost sm" id="sheetIta">Scheda ITA</button>
+          <button class="btn ghost sm" id="sheetEng">Scheda ENG</button>
           <button class="btn ghost sm" id="odooExport">Esporta offerta (JSON)</button>
           <button class="btn primary sm" id="odooSend">Invia a Odoo</button>
         </div>
@@ -857,7 +858,34 @@
     addr:"Via della Liberazione 44 · 20098 San Giuliano Milanese (MI) · Italia",
     contacts:"Tel. +39 02 50042152 · info@nseled.eu · www.nseled.eu · P.IVA IT11840100967"
   };
-  function buildClientSheet(){
+  const SHEET_I18N={
+    it:{ title:"SCHEDA TECNICA", tab:"Scheda tecnica", key:"Punti di forza",
+      usage:"Utilizzo", size:"Dimensione totale schermo (mm)", surface:"Superficie schermo (m²)",
+      pitch:"Interasse fisico / passo (mm)", moduleSize:"Dimensioni modulo", moduleU:"(mm)",
+      modules:"Numero moduli B×H", cabinets:"Cabinet", physRes:"Definizione grafica fisica (pixel)",
+      density:"Risoluzione grafica (pixel/m²)", ledPix:"LED per pixel", hz:"Frequenza (Hz)",
+      angle:"Angolo di visione H e V", distance:"Distanza di visione (m)", nit:"Luminosità (nit)",
+      cons:"Consumo medio (W/m² · kW)", weight:"Peso (kg/m² · totale kg)", temp:"Temperatura di funzionamento (°C)",
+      life:"Vita media dei LED (ore)", ip:"Grado di protezione IP (front/retro)", format:"Formato schermo",
+      maint:"Accesso per manutenzione", cert:"Certificazione", material:"Materiale", video:"Video input",
+      icDim:"DIMENSIONE", icPitch:"INTERASSE", icLum:"LUMINOSITÀ", icCons:"CONSUMO", icWeight:"PESO", icIp:"PROTEZIONE IP",
+      note:"N.B. I dati tecnici sopra menzionati sono indicativi e saranno confermati nel progetto definitivo. Distanza di visione e consumo medio sono stime tecniche. Documento non contrattuale.",
+      loc:"it-IT" },
+    en:{ title:"TECHNICAL SHEET", tab:"Technical sheet", key:"Key features",
+      usage:"Usage", size:"Total screen size (mm)", surface:"Screen surface (m²)",
+      pitch:"Physical pitch (mm)", moduleSize:"Module size", moduleU:"(mm)",
+      modules:"Modules W×H", cabinets:"Cabinets", physRes:"Physical resolution (pixels)",
+      density:"Pixel density (pixels/m²)", ledPix:"LED per pixel", hz:"Refresh rate (Hz)",
+      angle:"Viewing angle H and V", distance:"Viewing distance (m)", nit:"Brightness (nit)",
+      cons:"Average consumption (W/m² · kW)", weight:"Weight (kg/m² · total kg)", temp:"Operating temperature (°C)",
+      life:"LED average lifespan (hours)", ip:"IP protection (front/rear)", format:"Screen format",
+      maint:"Maintenance access", cert:"Certification", material:"Material", video:"Video input",
+      icDim:"SIZE", icPitch:"PITCH", icLum:"BRIGHTNESS", icCons:"CONSUMPTION", icWeight:"WEIGHT", icIp:"IP RATING",
+      note:"Note: the technical data above are indicative and will be confirmed in the final project. Viewing distance and average consumption are technical estimates. Non-contractual document.",
+      loc:"en-GB" }
+  };
+  function buildClientSheet(lang){
+    lang=(lang==="en")?"en":"it"; const T=SHEET_I18N[lang];
     const p=currentProduct(); if(!p||!S.selWc||!S.selHc) return;
     const totalW=S.selWc.total, totalH=S.selHc.total;
     const cols=expand(S.selWc.counts), rows=expand(S.selHc.counts);
@@ -887,30 +915,30 @@
 
     // --- tabella specifiche (destra) ---
     const rowsHtml=[]; const R=(k,v)=>{ if(v!==undefined&&v!==""&&v!==null) rowsHtml.push('<tr><th>'+k+'</th><td>'+v+'</td></tr>'); };
-    R("Utilizzo", t.usage);
-    R("Dimensione totale schermo (mm)", fmt(totalW)+" × "+fmt(totalH));
-    R("Superficie schermo (m²)", num(area,2));
-    if(pitch>0) R("Interasse fisico / passo (mm)", String(pitch).replace(".",",")+(S.res.label?" · "+S.res.label:""));
-    R("Dimensioni modulo B×H"+(p.modD>0?"×D":"")+" (mm)", (p.modW&&p.modH)?(p.modW+"×"+p.modH+(p.modD>0?"×"+p.modD:"")):undefined);
-    R("Numero moduli B×H", (nMx&&nMy)?(nMx+"×"+nMy+" ("+(nMx*nMy)+")"):undefined);
-    R("Cabinet", cnt+" ("+cols.length+"×"+rows.length+")");
-    if(totPx>0) R("Definizione grafica fisica (pixel)", fmt(px)+"×"+fmt(py));
-    if(totPx>0) R("Risoluzione grafica (pixel/m²)", fmt(Math.round(totPx/area)));
-    R("LED per pixel", t.ledType);
-    R("Frequenza (Hz)", t.hz);
-    R("Angolo di visione H e V", t.angle);
-    if(pitch>0) R("Distanza di visione (m)", "~"+String(pitch).replace(".",","));
-    R("Luminosità (nit)", t.nit);
-    if(anyP) R("Consumo medio (W/m² · kW)", p.wPerSqm+" · "+num(pAvg/1000,2)+" kW");
-    if(anyW) R("Peso (kg/m² · totale kg)", Math.round(kgSqm)+" · "+fmt(Math.round(wSum)));
-    R("Temperatura di funzionamento (°C)", t.tempOp);
-    R("Vita media dei LED (ore)", t.life);
-    R("Grado di protezione IP (front/retro)", t.ip);
-    R("Formato schermo", (totalW/g<=40&&totalH/g<=40)?fmtRatio:num(totalW/totalH,2));
-    R("Accesso per manutenzione", t.maintenance);
-    R("Certificazione", t.cert);
-    R("Materiale", t.material);
-    R("Video input", t.videoInput);
+    R(T.usage, t.usage);
+    R(T.size, fmt(totalW)+" × "+fmt(totalH));
+    R(T.surface, num(area,2));
+    if(pitch>0) R(T.pitch, String(pitch).replace(".",",")+(S.res.label?" · "+S.res.label:""));
+    R(T.moduleSize+" B×H"+(p.modD>0?"×D":"")+" "+T.moduleU, (p.modW&&p.modH)?(p.modW+"×"+p.modH+(p.modD>0?"×"+p.modD:"")):undefined);
+    R(T.modules, (nMx&&nMy)?(nMx+"×"+nMy+" ("+(nMx*nMy)+")"):undefined);
+    R(T.cabinets, cnt+" ("+cols.length+"×"+rows.length+")");
+    if(totPx>0) R(T.physRes, fmt(px)+"×"+fmt(py));
+    if(totPx>0) R(T.density, fmt(Math.round(totPx/area)));
+    R(T.ledPix, t.ledType);
+    R(T.hz, t.hz);
+    R(T.angle, t.angle);
+    if(pitch>0) R(T.distance, "~"+String(pitch).replace(".",","));
+    R(T.nit, t.nit);
+    if(anyP) R(T.cons, p.wPerSqm+" · "+num(pAvg/1000,2)+" kW");
+    if(anyW) R(T.weight, Math.round(kgSqm)+" · "+fmt(Math.round(wSum)));
+    R(T.temp, t.tempOp);
+    R(T.life, t.life);
+    R(T.ip, t.ip);
+    R(T.format, (totalW/g<=40&&totalH/g<=40)?fmtRatio:num(totalW/totalH,2));
+    R(T.maint, t.maintenance);
+    R(T.cert, t.cert);
+    R(T.material, t.material);
+    R(T.video, t.videoInput);
 
     // --- fascia icone (sinistra) ---
     const ic={
@@ -923,19 +951,19 @@
     };
     const icons=[];
     const IC=(svg,lab,val)=>{ if(val) icons.push('<div class="ic"><div class="icsvg">'+svg+'</div><div class="ict"><b>'+lab+'</b><span>'+val+'</span></div></div>'); };
-    IC(ic.dim,"DIMENSIONE",fmt(totalW)+"×"+fmt(totalH)+" mm");
-    IC(ic.pitch,"INTERASSE",pitch>0?(String(pitch).replace(".",",")+" mm"):"");
-    IC(ic.lum,"LUMINOSITÀ",t.nit?(t.nit+" NIT"):"");
-    IC(ic.cons,"CONSUMO",anyP?(num(pAvg/1000,2)+" kW"):"");
-    IC(ic.peso,"PESO",anyW?(fmt(Math.round(wSum))+" Kg"):"");
-    IC(ic.ip,"PROTEZIONE IP",t.ip||"");
+    IC(ic.dim,T.icDim,fmt(totalW)+"×"+fmt(totalH)+" mm");
+    IC(ic.pitch,T.icPitch,pitch>0?(String(pitch).replace(".",",")+" mm"):"");
+    IC(ic.lum,T.icLum,t.nit?(t.nit+" NIT"):"");
+    IC(ic.cons,T.icCons,anyP?(num(pAvg/1000,2)+" kW"):"");
+    IC(ic.peso,T.icWeight,anyW?(fmt(Math.round(wSum))+" Kg"):"");
+    IC(ic.ip,T.icIp,t.ip||"");
 
     const selling=(p.selling&&p.selling.trim())
-      ? '<div class="sf"><h3>Punti di forza</h3><ul>'+p.selling.split(/\n+/).filter(Boolean).map(l=>'<li>'+esc(l.replace(/^[-•]\s*/,""))+'</li>').join("")+'</ul></div>'
+      ? '<div class="sf"><h3>'+T.key+'</h3><ul>'+p.selling.split(/\n+/).filter(Boolean).map(l=>'<li>'+esc(l.replace(/^[-•]\s*/,""))+'</li>').join("")+'</ul></div>'
       : '';
-    const dateStr=new Date().toLocaleDateString("it-IT");
+    const dateStr=new Date().toLocaleDateString(T.loc);
 
-    const html='<!DOCTYPE html><html lang="it"><head><meta charset="utf-8"><title>Scheda tecnica — '+esc(baseDesc)+'</title>'+
+    const html='<!DOCTYPE html><html lang="'+lang+'"><head><meta charset="utf-8"><title>'+T.tab+' — '+esc(baseDesc)+'</title>'+
       '<style>'+
       '*{box-sizing:border-box;margin:0;padding:0}'+
       'body{font-family:Arial,Helvetica,sans-serif;color:#1a2330;background:#fff;padding:14mm 14mm}'+
@@ -964,7 +992,7 @@
       '.note{margin-top:10px;font-size:9.5px;color:#8a93a1;font-style:italic}'+
       '@media print{body{padding:0}@page{size:A4 landscape;margin:10mm}}'+
       '</style></head><body>'+
-      '<div class="hd"><img src="'+NSE_LOGO+'" alt="NSELED"><div class="ttl">SCHEDA TECNICA</div></div>'+
+      '<div class="hd"><img src="'+NSE_LOGO+'" alt="NSELED"><div class="ttl">'+T.title+'</div></div>'+
       '<div class="cols">'+
         '<div class="cl">'+
           '<span class="pname">'+esc(obj||baseDesc)+'</span>'+
@@ -979,7 +1007,7 @@
           selling+
         '</div>'+
       '</div>'+
-      '<div class="note">N.B. I dati tecnici sopra menzionati sono indicativi e saranno confermati nel progetto definitivo. Distanza di visione e consumo medio sono stime tecniche. Documento non contrattuale.</div>'+
+      '<div class="note">'+T.note+'</div>'+
       '<div class="ft">'+esc(NSE_INFO.name)+' · '+esc(NSE_INFO.addr)+'<br>'+esc(NSE_INFO.contacts)+'</div>'+
       '<script>window.onload=function(){setTimeout(function(){window.print();},400);};<\/script>'+
       '</body></html>';
@@ -1886,7 +1914,8 @@
   $("inPitch").addEventListener("change",render);
   ["enHours","enRate"].forEach(id=>{ const el=$(id); if(el) el.addEventListener("input",render); });
   $("modToggle").addEventListener("click",()=>{ S.showModules=!S.showModules; render(); });
-  $("clientSheet").addEventListener("click",()=>{ const off=buildOffer(); if(off) buildClientSheet(); });
+  $("sheetIta").addEventListener("click",()=>{ const off=buildOffer(); if(off) buildClientSheet("it"); });
+  $("sheetEng").addEventListener("click",()=>{ const off=buildOffer(); if(off) buildClientSheet("en"); });
   function setCfg(cls,html){ const el=$("cfgStatus"); if(!el) return; el.className="odoostatus "+cls; el.innerHTML=html; }
   function setLoadMsg(cls,html){ const el=$("cfgLoadMsg"); if(!el) return; el.className="odoostatus "+cls; el.innerHTML=html; }
   async function doRecall(){
