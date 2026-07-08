@@ -283,6 +283,15 @@
   .odoostatus.ok{color:var(--ok)} .odoostatus.err{color:var(--danger)} .odoostatus.wait{color:var(--muted)}
   .recall{padding-bottom:16px}
   .recallrow{display:flex;gap:8px;align-items:center}
+  #syncPreview{margin-top:12px}
+  .synctitle{font-family:var(--mono);font-size:12px;color:var(--ink);margin-bottom:8px}
+  .synctablewrap{max-height:260px;overflow:auto;border:1px solid var(--line-soft);border-radius:8px}
+  .synctable{width:100%;border-collapse:collapse;font-size:12px}
+  .synctable th{position:sticky;top:0;background:var(--panel-2);text-align:left;padding:7px 9px;color:var(--muted-2);font-family:var(--mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.04em}
+  .synctable td{padding:7px 9px;border-top:1px solid var(--line-soft);color:var(--ink)}
+  .synctable td.mono{font-family:var(--mono)}
+  .synctable td.old{color:var(--muted)} .synctable td.new{color:#8fe0b8;font-weight:600}
+  .syncmiss{margin-top:8px;font-family:var(--mono);font-size:11.5px;color:var(--signal)}
   .recallrow input{flex:1;min-width:0;padding:10px 12px;font-family:var(--mono);font-size:13px;text-transform:uppercase;letter-spacing:.04em}
   .recallrow .btn{flex:0 0 auto}
 
@@ -545,6 +554,16 @@
           <button class="btn ghost sm" id="changePw">Aggiorna password</button>
         </div>
         <div class="err" id="pwOk" style="color:var(--ok)"></div>
+      </div>
+
+      <div class="adminsec">
+        <h3>Sincronizza prezzi da Odoo</h3>
+        <p class="sub" style="margin:0 0 12px">Legge da Odoo il prezzo di listino di ogni cabinet e controller in base al <b>codice Odoo</b> e aggiorna il catalogo. Viene mostrata un'anteprima delle modifiche: applichi solo dopo conferma, poi ricordati di <b>Salvare sul sito</b>.</p>
+        <div class="rowbtns">
+          <button class="btn ghost sm" id="syncPricesBtn">Aggiorna prezzi da Odoo</button>
+        </div>
+        <div class="odoostatus" id="syncPricesMsg"></div>
+        <div id="syncPreview" hidden></div>
       </div>
 
       <div class="adminsec">
@@ -1177,6 +1196,7 @@
 
   const fmt=n=>Math.round(n).toLocaleString("it-IT");
   const eur=n=>"€ "+n.toLocaleString("it-IT",{minimumFractionDigits:2,maximumFractionDigits:2});
+  const escHtml=s=>String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
   const signed=d=>(d>0?"+":(d<0?"−":"±"))+fmt(Math.abs(d));
   function deltaStr(sel,req){ const d=Math.round(sel-req); return d===0?{cls:"zero",txt:"esatta"}:{cls:"off",txt:(d>0?"+":"")+fmt(d)+" mm"}; }
   function gcd(a,b){ while(b){ [a,b]=[b,a%b]; } return a; }
@@ -1946,6 +1966,63 @@
       }
       else { msg.className="odoostatus err"; msg.textContent="Errore: "+((d&&d.error)||("HTTP "+r.status))+"."; }
     }catch(err){ msg.className="odoostatus err"; msg.textContent="Connettore non raggiungibile: verifica di aver deployato save-catalog."; }
+  });
+
+  // --- Sincronizza prezzi da Odoo ---
+  function collectPriceSlots(){
+    const slots=[];
+    const prods=draft||DB.products;
+    (prods||[]).forEach(p=>{
+      (p.cabinets||[]).forEach(c=>{
+        if(c.codes&&typeof c.codes==="object"){
+          Object.keys(c.codes).forEach(rid=>{
+            const code=(c.codes[rid]||"").trim(); if(!code) return;
+            const res=(p.resolutions||[]).find(r=>r.id===rid);
+            slots.push({ code, label:p.name+" · "+c.w+"×"+c.h+(res?(" · "+res.label):""),
+              get:()=>(c.prices?c.prices[rid]:undefined), set:v=>{ if(!c.prices)c.prices={}; c.prices[rid]=v; } });
+          });
+        }
+        if((c.code||"").trim()){
+          slots.push({ code:c.code.trim(), label:p.name+" · "+c.w+"×"+c.h+" (prezzo unico)",
+            get:()=>c.price, set:v=>{c.price=v;} });
+        }
+      });
+    });
+    const ctrls=draftControllers||DB.controllers||[];
+    ctrls.forEach(c=>{ if((c.code||"").trim()) slots.push({ code:c.code.trim(), label:"Controller "+(c.model||""), get:()=>c.price, set:v=>{c.price=v;} }); });
+    return slots;
+  }
+  $("syncPricesBtn").addEventListener("click",async ()=>{
+    const msg=$("syncPricesMsg"), prev=$("syncPreview");
+    const slots=collectPriceSlots();
+    const codes=[...new Set(slots.map(s=>s.code))];
+    prev.hidden=true; prev.innerHTML="";
+    if(!codes.length){ msg.className="odoostatus err"; msg.textContent="Nessun codice Odoo presente nei prodotti/controller."; return; }
+    msg.className="odoostatus wait"; msg.textContent="Lettura prezzi da Odoo…";
+    try{
+      const r=await fetch("/.netlify/functions/odoo-prices",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({codes})});
+      const d=await r.json().catch(()=>({}));
+      if(!(r.ok&&d.ok)){ msg.className="odoostatus err"; msg.textContent="Errore: "+((d&&d.error)||("HTTP "+r.status))+"."; return; }
+      const changes=[];
+      slots.forEach(s=>{ if(Object.prototype.hasOwnProperty.call(d.prices,s.code)){ const np=Number(d.prices[s.code]); const op=Number(s.get()||0); if(!isNaN(np)&&np>0&&np!==op) changes.push({slot:s,code:s.code,label:s.label,oldP:op,newP:np}); } });
+      const missing=d.missing||[];
+      if(!changes.length){ msg.className="odoostatus ok"; msg.textContent="Prezzi già allineati con Odoo"+(missing.length?(" · "+missing.length+" codici non trovati su Odoo"):"")+"."; if(missing.length){ prev.hidden=false; prev.innerHTML='<div class="syncmiss">Codici non trovati su Odoo: '+missing.map(escHtml).join(", ")+'</div>'; } return; }
+      msg.className="odoostatus"; msg.textContent="";
+      let rowsH=changes.map((c,i)=>'<tr><td>'+escHtml(c.label)+'</td><td class="mono">'+escHtml(c.code)+'</td><td class="mono old">'+(c.oldP?eur(c.oldP):"—")+'</td><td class="mono new">'+eur(c.newP)+'</td></tr>').join("");
+      prev.hidden=false;
+      prev.innerHTML='<div class="synctitle">'+changes.length+' prezzi da aggiornare'+(missing.length?(' · '+missing.length+' codici non trovati'):'')+'</div>'+
+        '<div class="synctablewrap"><table class="synctable"><thead><tr><th>Voce</th><th>Codice</th><th>Attuale</th><th>Nuovo</th></tr></thead><tbody>'+rowsH+'</tbody></table></div>'+
+        (missing.length?'<div class="syncmiss">Non trovati: '+missing.map(escHtml).join(", ")+'</div>':'')+
+        '<div class="rowbtns" style="margin-top:10px"><button class="btn primary sm" id="syncApply">Applica '+changes.length+' modifiche</button><button class="btn ghost sm" id="syncCancel">Annulla</button></div>';
+      $("syncApply").addEventListener("click",()=>{
+        changes.forEach(c=>c.slot.set(c.newP));
+        renderProdList(); renderCtrlAdmin();
+        S.selWc=S.selHc=null; render();
+        prev.hidden=true; prev.innerHTML="";
+        msg.className="odoostatus ok"; msg.textContent=changes.length+" prezzi aggiornati nel catalogo. Premi \u00ab Salva sul sito \u00bb per renderli attivi per tutti.";
+      });
+      $("syncCancel").addEventListener("click",()=>{ prev.hidden=true; prev.innerHTML=""; msg.className="odoostatus"; msg.textContent="Aggiornamento annullato."; });
+    }catch(err){ msg.className="odoostatus err"; msg.textContent="Connettore non raggiungibile: verifica di aver deployato odoo-prices."; }
   });
   $("importFile").addEventListener("change",e=>{
     const rd=new FileReader();
