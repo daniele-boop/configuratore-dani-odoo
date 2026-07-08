@@ -210,7 +210,13 @@
 
   .prod{border:1px solid var(--line);border-radius:12px;padding:15px;margin-bottom:14px;background:var(--panel-2)}
   .prod .phead{display:flex;gap:10px;align-items:center;margin-bottom:12px}
-  .prod .phead input{flex:1;font-family:var(--disp);font-size:15px;font-weight:600}
+  .prod .phead input{flex:1;font-family:var(--disp);font-size:16px;font-weight:700;color:#fff;
+    background:var(--panel);border:2px solid rgba(255,255,255,.85)}
+  .prod .phead input:focus{border-color:#37c3d1;box-shadow:0 0 0 3px rgba(55,195,209,.30)}
+  /* selezione campo ben visibile e coerente in tutto il pannello */
+  .modal input:focus,.modal textarea:focus,.modal select:focus{
+    border-color:#37c3d1;box-shadow:0 0 0 3px rgba(55,195,209,.26);background:var(--panel)}
+  .modal textarea{background:var(--panel-2);border:1px solid var(--line);color:var(--ink);border-radius:10px}
 
   .cabcard{border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:9px;background:var(--panel)}
   .cabcard-head{display:flex;align-items:center;gap:9px;margin-bottom:11px}
