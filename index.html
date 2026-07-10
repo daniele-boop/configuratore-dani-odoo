@@ -156,6 +156,8 @@
   .altwall .meta{font-family:var(--mono);font-size:12.5px;color:var(--muted);margin-top:5px}
   .altwall .meta .off{color:var(--signal)} .altwall .meta .ok{color:var(--ok)}
   .altwall .meta .altprice{font-size:19px;font-weight:600;color:#8fe0b8;letter-spacing:.3px}
+  .altwall .meta .altsize{color:#fff;font-weight:600}
+  .altwall .meta .altpct{color:#ffd23f;font-weight:700;font-size:13.5px;letter-spacing:.02em}
   .altwall .meta .w2{color:var(--signal)}
 
   .bomrow{display:flex;align-items:center;gap:11px;padding:9px 4px;border-top:1px solid var(--line-soft)}
@@ -1630,10 +1632,14 @@
       const icons='<span class="altmarks">'+(isMinCnt?'<span class="mk star" title="Meno cabinet">★</span>':'')+(isCheap?'<span class="mk heart" title="Più economica">♥</span>':'')+'</span>';
       let badge = cur ? '<span class="badge">attuale</span>' : (w.uniform? '<span class="badge uni">cabinet uguali</span>':'');
       const dW=Math.round(w.dW), dH=Math.round(w.dH);
+      const pctW = S.reqW>0 ? Math.round((w.tW-S.reqW)/S.reqW*100) : 0;
+      const pctH = S.reqH>0 ? Math.round((w.tH-S.reqH)/S.reqH*100) : 0;
+      const sp = v => (v>0?"+":"")+v+"%";
+      const pctStr = (pctW===0&&pctH===0) ? "esatta" : ("B "+sp(pctW)+" / H "+sp(pctH));
       const dCls=(d)=> d===0?'ok':'off';
       const priceTxt = w.priceOk ? ' · <span class="altprice">'+eur(w.price)+'</span>' : "";
       btn.innerHTML='<div class="mix"><span>'+parts.join(" · ")+icons+'</span>'+badge+'</div>'+
-        '<div class="meta">'+fmt(w.tW)+' × '+fmt(w.tH)+' mm · Δ <span class="'+dCls(dW)+'">'+signed(dW)+'</span>/<span class="'+dCls(dH)+'">'+signed(dH)+'</span> · '+w.cnt+' cabinet'+priceTxt+'</div>';
+        '<div class="meta"><span class="altsize">'+fmt(w.tW)+' × '+fmt(w.tH)+' mm</span> · <span class="altpct">'+pctStr+'</span> · '+w.cnt+' cabinet'+priceTxt+'</div>';
       btn.addEventListener("click",()=>{ S.selWc={total:w.b.total,counts:Object.assign({},w.b.counts)}; S.selHc={total:w.h.total,counts:Object.assign({},w.h.counts)}; S.selKey=S.productId+"|"+S.reqW+"x"+S.reqH; render(); });
       btn.addEventListener("keydown",(e)=>{
         if(e.key==="ArrowDown"||e.key==="ArrowUp"){
